@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Water Dashboard</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, 
+                #667eea 0%, 
+                #764ba2 25%, 
+                #f093fb 50%, 
+                #f5576c 75%, 
+                #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 20px 40px;
+            position: sticky;
+            top: 0px;
+            z-index: 1000;
+            margin: 0px;
+            overflow: hidden;
+            border-radius: 0px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-logo {
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links li a:hover {
+            color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .explainer {
+            max-width: 800px;
+            margin: 0 0 30px 0;
+            line-height: 1.6;
+            text-align: justify;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            background: transparent;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .explainer h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .dashboard-header h1 {
+            font-size: 36px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+       
+        #dashboard-offset {
+            height: 100px; /* sama dengan tinggi navbar */
+            margin-top: -100px;
+        }
+
+        .date {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-role {
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .username {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            padding: 30px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .kpi-card h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+        }
+
+        .kpi-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-card .change {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .kpi-card.alert {
+            background: rgba(220, 53, 69, 0.15);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .kpi-card.alert .value {
+            color: #ff6b6b;
+        }
+
+        .chart-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            padding: 30px;
+            border-radius: 20px;
+            min-height: 350px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .chart-container h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .flowRate-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            filter: brightness(0) invert(1);
+            opacity: 0.8;
+        }
+
+        /* Floating animation for cards */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .kpi-card:nth-child(1) {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .kpi-card:nth-child(2) {
+            animation: float 6s ease-in-out infinite 2s;
+        }
+
+        .kpi-card:nth-child(3) {
+            animation: float 6s ease-in-out infinite 4s;
+        }
+
+        /* Glow effects */
+        .glow {
+            position: relative;
+        }
+
+        .glow::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                rgba(255, 255, 255, 0.1), 
+                rgba(255, 255, 255, 0.05));
+            border-radius: 22px;
+            z-index: -1;
+            filter: blur(5px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .glow:hover::after {
+            opacity: 1;
+        }
+
+        /* Flow rates and consumption grid styles */
+        .flow-rates-grid, .consumption-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .flow-box, .consumption-box {
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .flow-box:hover, .consumption-box:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .flow-box .value, .consumption-box .value {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .flow-label, .consumption-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+
+        /* Responsive design for new grids */
+        @media (max-width: 768px) {
+            .navbar {
+                margin: 10px;
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .nav-links li a {
+                font-size: 14px;
+                padding: 6px 12px;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .explainer h1 {
+                font-size: 28px;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .flow-rates-grid, .consumption-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .chart-section {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .chart-container {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo"><strong>Smart Water Dashboard</strong></div>
+         <ul class="nav-links">
+            <li><a href="#dashboard-offset">Dashboard</a></li>
+            <li><a href="#chart-section">Charts</a></li>
+            <li><a href="#reports">Reports</a></li>
+            <li><a href="#settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="explainer">
+            <h1>Welcome, Adrian Aryaputra</h1>
+            <p>This dashboard provides a comprehensive overview of Water management, tracking key metrics like Flowrates, total water consumed, and management performance in real time.</p>
+            <br>
+            <p>The Real-time flow rate graph visualizes current water usage, while device usage distribution chart comparing most water consuming areas, and daily usage by device graph highlighting total water usage to help analyze user behavior.</p>
+        </div>
+        <div id="dashboard-offset"></div>
+            <section id="dashboard">
+            </section>
+        
+        <div id="header" class="dashboard-header glass glow">
+            <div>
+                <h1>Smart Water Dashboard</h1>
+                <p class="date" id="lastUpdate">May 28, 2025</p>
+            </div>
+            <div class="user-info">
+                <span class="user-role">Adrian Aryaputra</span>
+                <span class="username">(221311003)</span>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card glass glow">
+                <h3>Current Flow rate 
+                <svg class="flowRate-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"></path>
+                </svg></h3>
+                <div class="flow-rates-grid">
+                    <div class="flow-box">
+                        <div class="value" id="flowRate1">0 L/min</div>
+                        <p class="flow-label">Toilet</p>
+                    </div>
+                    <div class="flow-box">
+                        <div class="value" id="flowRate2">0 L/min</div>
+                        <p class="flow-label">Faucet</p>
+                    </div>
+                    <div class="flow-box">
+                        <div class="value" id="flowRate3">0 L/min</div>
+                        <p class="flow-label">Garden</p>
+                    </div>
+                </div>
+            </div>
+            <div class="kpi-card glass glow">
+                <h3>Total Consumption</h3>
+                <div class="consumption-grid">
+                    <div class="consumption-box">
+                        <p class="value"><span id="totalWater1">0</span> L</p>
+                        <p class="consumption-label">Toilet</p>
+                    </div>
+                    <div class="consumption-box">
+                        <p class="value"><span id="totalWater2">0</span> L</p>
+                        <p class="consumption-label">Faucet</p>
+                    </div>
+                    <div class="consumption-box">
+                        <p class="value"><span id="totalWater3">0</span> L</p>
+                        <p class="consumption-label">Garden</p>
+                    </div>
+                </div>
+                <p class="change" id="totalTrend">↗ 0% vs yesterday</p>
+            </div>
+            <div class="kpi-card glass glow alert">
+                <h3>Usage Alerts</h3>
+                <p class="value"><span id="alerts">0</span> Active</p>
+                <p class="change" id="alertDevice">-</p>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-container glass glow">
+                <h3>Real-time Flow Rate</h3>
+                <div id="flowChart" style="height: 300px;"></div>
+            </div>
+            <div class="chart-container glass glow">
+                <h3>Device Usage Distribution</h3>
+                <div id="deviceChart" style="height: 300px;"></div>
+            </div>
+            <div class="chart-container glass glow">
+                <h3>Daily Usage by Device</h3>
+                <div id="dailyChart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.min.js"></script>
+    <script>
+        // ======================
+        // Configuration
+        // ======================
+        let currentDeviceIndex = 0;
+        let selectedDevice = 'all';
+        let alertCount = 0;
+        const devices = ['toilet', 'faucet', 'garden'];
+        const colors = {
+            toilet: '#de5d83',    // Red
+            faucet: '#13bbaf',    // Blue
+            garden: '#fff7e7',    // Yellow
+            all: '#4facfe'
+        };
+
+        // Device Data Storage
+        let devicesData = {};
+        let flowChart, deviceChart, dailyChart;
+
+        // ======================
+        // Data Generation Functions
+        // ======================
+        function generateRandomFlowData(points = 20) {
+            const data = [];
+            const now = Date.now();
+            
+            for (let i = points; i >= 0; i--) {
+                const timestamp = now - (i * 60000); // 1 minute intervals
+                const flowRate = Math.random() * 15; // Random 0-15 L/min
+                data.push([timestamp, parseFloat(flowRate.toFixed(2))]);
+            }
+            return data;
+        }
+
+        function calculateTotalConsumption(flowData) {
+            // Calculate total consumption based on flow rate over time
+            // Each data point represents 1 minute of flow, so L/min * 1 min = L
+            let total = 0;
+            for (let i = 1; i < flowData.length; i++) {
+                const timeDiff = (flowData[i][0] - flowData[i-1][0]) / 60000; // Convert ms to minutes
+                const avgFlowRate = (flowData[i][1] + flowData[i-1][1]) / 2; // Average flow between points
+                total += avgFlowRate * timeDiff; // L/min * minutes = L
+            }
+            return total;
+        }
+
+        function initializeRandomData() {
+            // Initialize each device starting with 0 consumption
+            devices.forEach(device => {
+                devicesData[device] = {
+                    flow: [[Date.now(), 0]], // Start with 0 flow rate
+                    daily: 0 // Start with 0 consumption
+                };
+            });
+            
+            // Initialize combined 'all' data
+            devicesData.all = {
+                flow: [[Date.now(), 0]],
+                daily: 0
+            };
+        }
+
+        function generateNewDataPoint() {
+            const now = Date.now();
+            
+            // Generate new data for each device
+            devices.forEach(device => {
+                const newFlow = Math.random() * 15;
+                const newPoint = [now, parseFloat(newFlow.toFixed(2))];
+                
+                // Calculate consumption increment from the last data point
+                const lastPoint = devicesData[device].flow.slice(-1)[0];
+                if (lastPoint) {
+                    const timeDiff = (now - lastPoint[0]) / 60000; // Convert ms to minutes
+                    const avgFlowRate = (newFlow + lastPoint[1]) / 2; // Average flow between points
+                    const consumptionIncrement = avgFlowRate * timeDiff; // L/min * minutes = L
+                    devicesData[device].daily += consumptionIncrement; // Accumulate consumption
+                }
+                
+                // Add new point and remove old ones (keep last 20 points)
+                devicesData[device].flow.push(newPoint);
+                if (devicesData[device].flow.length > 20) {
+                    devicesData[device].flow.shift();
+                }
+            });
+            
+            // Calculate combined 'all' data
+            const totalFlow = devices.reduce((sum, device) => {
+                const lastPoint = devicesData[device].flow.slice(-1)[0];
+                return sum + (lastPoint ? lastPoint[1] : 0);
+            }, 0);
+            
+            // Calculate consumption increment for 'all' devices
+            const lastAllPoint = devicesData.all.flow.slice(-1)[0];
+            if (lastAllPoint) {
+                const timeDiff = (now - lastAllPoint[0]) / 60000;
+                const avgFlowRate = (totalFlow + lastAllPoint[1]) / 2;
+                const consumptionIncrement = avgFlowRate * timeDiff;
+                devicesData.all.daily += consumptionIncrement;
+            }
+            
+            const newAllPoint = [now, parseFloat(totalFlow.toFixed(2))];
+            devicesData.all.flow.push(newAllPoint);
+            if (devicesData.all.flow.length > 20) {
+                devicesData.all.flow.shift();
+            }
+        }
+
+        // ======================
+        // Chart Initialization
+        // ======================
+        function initCharts() {
+            // Real-time Flow Chart (Line) - Now shows all 3 devices separately
+            flowChart = Highcharts.chart('flowChart', {
+                chart: {
+                    type: 'spline',
+                    backgroundColor: 'transparent',
+                    animation: false
+                },
+                title: { text: 'Real-time Flow Rate (L/min)', style: { color: '#fff' } },
+                xAxis: {
+                    type: 'datetime',
+                    labels: { style: { color: '#ddd' } },
+                    gridLineColor: 'rgba(255,255,255,0.1)'
+                },
+                yAxis: {
+                    title: { text: 'L/min', style: { color: '#fff' } },
+                    labels: { style: { color: '#ddd' } },
+                    gridLineColor: 'rgba(255,255,255,0.1)',
+                    min: 0
+                },
+                series: [
+                    {
+                        name: 'Toilet',
+                        data: devicesData.toilet.flow,
+                        color: colors.toilet,
+                        animation: false
+                    },
+                    {
+                        name: 'Faucet',
+                        data: devicesData.faucet.flow,
+                        color: colors.faucet,
+                        animation: false
+                    },
+                    {
+                        name: 'Garden',
+                        data: devicesData.garden.flow,
+                        color: colors.garden,
+                        animation: false
+                    }
+                ],
+                legend: { 
+                    itemStyle: { color: '#ccc' },
+                    enabled: true
+                },
+                credits: { enabled: false },
+                plotOptions: {
+                    series: {
+                        animation: false
+                    }
+                }
+            });
+
+            // Device Distribution (Pie)
+            deviceChart = Highcharts.chart('deviceChart', {
+                chart: {
+                    type: 'pie',
+                    backgroundColor: 'transparent'
+                },
+                title: { text: 'Device Usage Distribution', style: { color: '#fff' } },
+                series: [{
+                    name: 'Usage',
+                    colorByPoint: true,
+                    data: devices.map((device, index) => ({
+                        name: device.charAt(0).toUpperCase() + device.slice(1),
+                        y: devicesData[device].daily,
+                        color: [colors.toilet, colors.faucet, colors.garden][index]
+                    }))
+                }],
+                legend: { itemStyle: { color: '#ccc' } },
+                credits: { enabled: false },
+                plotOptions: {
+                    pie: {
+                        dataLabels: {
+                            style: { color: '#fff' }
+                        }
+                    }
+                }
+            });
+
+            // Daily Usage by Device (Bar)
+            dailyChart = Highcharts.chart('dailyChart', {
+                chart: {
+                    type: 'column',
+                    backgroundColor: 'transparent'
+                },
+                title: { text: 'Daily Usage (L)', style: { color: '#fff' } },
+                xAxis: {
+                    categories: devices.map(d => d.charAt(0).toUpperCase() + d.slice(1)),
+                    labels: { style: { color: '#ddd' } },
+                    gridLineColor: 'rgba(255,255,255,0.1)'
+                },
+                yAxis: {
+                    title: { text: 'Liters', style: { color: '#fff' } },
+                    labels: { style: { color: '#ddd' } },
+                    gridLineColor: 'rgba(255,255,255,0.1)',
+                    min: 0
+                },
+                series: [{
+                    name: 'Usage',
+                    data: devices.map((device, index) => ({
+                        y: devicesData[device].daily,
+                        color: [colors.toilet, colors.faucet, colors.garden][index]
+                    })),
+                    showInLegend: false
+                }],
+                legend: { itemStyle: { color: '#ccc' } },
+                credits: { enabled: false }
+            });
+        }
+
+        // ======================
+        // Chart Updates
+        // ======================
+        function updateCharts() {
+            // Update flow chart with all 3 device series
+            flowChart.series[0].setData(devicesData.toilet.flow, false, false);
+            flowChart.series[1].setData(devicesData.faucet.flow, false, false);
+            flowChart.series[2].setData(devicesData.garden.flow, true, false);
+
+            // Update device distribution chart
+            const pieData = devices.map((device, index) => ({
+                name: device.charAt(0).toUpperCase() + device.slice(1),
+                y: devicesData[device].daily,
+                color: [colors.toilet, colors.faucet, colors.garden][index]
+            }));
+            deviceChart.series[0].setData(pieData, true);
+
+            // Update daily usage chart
+            const barData = devices.map((device, index) => ({
+                y: devicesData[device].daily,
+                color: [colors.toilet, colors.faucet, colors.garden][index]
+            }));
+            dailyChart.series[0].setData(barData, true);
+        }
+
+        function updateKPIs() {
+            // Update timestamp
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+
+            // Update individual device flow rates (current/latest values)
+            document.getElementById('flowRate1').textContent = 
+                `${(devicesData.toilet.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+            document.getElementById('flowRate2').textContent = 
+                `${(devicesData.faucet.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+            document.getElementById('flowRate3').textContent = 
+                `${(devicesData.garden.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+            
+            // Update individual device consumption
+            document.getElementById('totalWater1').textContent = devicesData.toilet.daily.toFixed(1);
+            document.getElementById('totalWater2').textContent = devicesData.faucet.daily.toFixed(1);
+            document.getElementById('totalWater3').textContent = devicesData.garden.daily.toFixed(1);
+
+            // Update trend (simple random percentage for demo)
+            const trendPercent = (Math.random() * 20 - 10).toFixed(1);
+            const trendIcon = trendPercent >= 0 ? '↗' : '↘';
+            document.getElementById('totalTrend').textContent = 
+                `${trendIcon} ${Math.abs(trendPercent)}% vs yesterday`;
+
+            // Update alerts (random for demo)
+            alertCount = Math.floor(Math.random() * 3);
+            document.getElementById('alerts').textContent = alertCount;
+            document.getElementById('alertDevice').textContent = 
+                alertCount > 0 ? devices[Math.floor(Math.random() * devices.length)].charAt(0).toUpperCase() + 
+                devices[Math.floor(Math.random() * devices.length)].slice(1) : '-';
+        }
+
+        function simulateRealTimeData() {
+            generateNewDataPoint();
+            updateCharts();
+            updateKPIs();
+        }
+
+        // ======================
+        // Initialization
+        // ======================
+        window.onload = () => {
+            initializeRandomData();
+            initCharts();
+            updateKPIs();
+            
+            // Update data every 3 seconds
+            setInterval(simulateRealTimeData, 3000);
+        };
+    </script>
+</body>
+</html>
