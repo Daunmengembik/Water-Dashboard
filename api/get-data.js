@@ -37,11 +37,22 @@ export default async function handler(req, res) {
           
           if (data && data.length > 0) {
             const latest = data[0];
+            console.log(`Debug ${device}:`, latest); // Add debugging
+            
+            // More robust parsing
+            const flowRate = latest.flow_rate;
+            const totalConsumed = latest.total_consumed;
+            
             deviceData[device] = {
-              flow: parseFloat(latest.flow_rate || 0),
-              total: parseFloat(latest.total_consumed || 0),
-              timestamp: Math.floor(new Date(latest.timestamp).getTime() / 1000),
-              last_update: latest.timestamp
+              flow: typeof flowRate === 'number' ? flowRate : parseFloat(flowRate) || 0,
+              total: typeof totalConsumed === 'number' ? totalConsumed : parseFloat(totalConsumed) || 0,
+              timestamp: Math.floor(Date.now() / 1000), // Use current time instead
+              last_update: latest.timestamp,
+              // Add raw data for debugging
+              raw_flow_rate: latest.flow_rate,
+              raw_total_consumed: latest.total_consumed,
+              raw_data_type_flow: typeof latest.flow_rate,
+              raw_data_type_total: typeof latest.total_consumed
             };
           } else {
             // No data found for this device
