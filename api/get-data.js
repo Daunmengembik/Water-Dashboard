@@ -1,4 +1,4 @@
-// api/get-data.js - Improved version with better debugging
+// api/get-data.js - Diagnostic version
 export default async function handler(req, res) {
   // Disable caching
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -20,186 +20,180 @@ export default async function handler(req, res) {
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHN3ZXltb3JvbmlxempsdXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDgzOTQsImV4cCI6MjA2MjI4NDM5NH0.RxN7hDAWpyuUFdHFfSXKgJZhWQJPFWulDTT-496Y-c8';
   const TABLE_NAME = 'flow_data';
 
-  // Function to get latest data from Supabase
-  async function getSupabaseData() {
-    try {
-      const devices = ['toilet', 'faucet', 'garden'];
-      const deviceData = {};
-      const debugInfo = {};
-
-      for (const device of devices) {
-        const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=eq.${device}&order=timestamp.desc&limit=1`;
-        
-        console.log(`Fetching data for ${device} from:`, url);
-        
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'apikey': SUPABASE_KEY
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          debugInfo[device] = {
-            response_status: response.status,
-            data_length: data ? data.length : 0,
-            raw_response: data
-          };
-          
-          if (data && data.length > 0) {
-            const latest = data[0];
-            console.log(`Raw data for ${device}:`, latest);
-            
-            // Better parsing with validation
-            let flowRate = 0;
-            let totalConsumed = 0;
-            
-            // Parse flow_rate
-            if (latest.flow_rate !== null && latest.flow_rate !== undefined) {
-              if (typeof latest.flow_rate === 'number') {
-                flowRate = latest.flow_rate;
-              } else if (typeof latest.flow_rate === 'string') {
-                const parsed = parseFloat(latest.flow_rate);
-                flowRate = isNaN(parsed) ? 0 : parsed;
-              }
-            }
-            
-            // Parse total_consumed
-            if (latest.total_consumed !== null && latest.total_consumed !== undefined) {
-              if (typeof latest.total_consumed === 'number') {
-                totalConsumed = latest.total_consumed;
-              } else if (typeof latest.total_consumed === 'string') {
-                const parsed = parseFloat(latest.total_consumed);
-                totalConsumed = isNaN(parsed) ? 0 : parsed;
-              }
-            }
-            
-            // Convert timestamp to Unix timestamp
-            let unixTimestamp;
-            try {
-              unixTimestamp = Math.floor(new Date(latest.timestamp).getTime() / 1000);
-            } catch (e) {
-              unixTimestamp = Math.floor(Date.now() / 1000);
-            }
-            
-            deviceData[device] = {
-              flow: flowRate,
-              total: totalConsumed,
-              timestamp: unixTimestamp,
-              last_update: latest.timestamp,
-              // Debug information
-              debug: {
-                raw_flow_rate: latest.flow_rate,
-                raw_total_consumed: latest.total_consumed,
-                flow_rate_type: typeof latest.flow_rate,
-                total_consumed_type: typeof latest.total_consumed,
-                parsed_flow: flowRate,
-                parsed_total: totalConsumed,
-                original_timestamp: latest.timestamp,
-                unix_timestamp: unixTimestamp
-              }
-            };
-          } else {
-            // No data found for this device
-            deviceData[device] = {
-              flow: 0,
-              total: 0,
-              timestamp: Math.floor(Date.now() / 1000),
-              last_update: new Date().toISOString(),
-              debug: {
-                message: 'No data found in database'
-              }
-            };
-          }
-        } else {
-          const errorText = await response.text();
-          console.error(`HTTP error for ${device}:`, response.status, errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-      }
-
-      return { data: deviceData, debug: debugInfo };
-    } catch (error) {
-      console.error('Supabase fetch error:', error);
-      return { data: false, error: error.message };
-    }
-  }
-
-  // Function to get default data structure
-  function getDefaultData() {
-    const devices = ['toilet', 'faucet', 'garden'];
-    const defaultData = {};
-    
-    devices.forEach(device => {
-      defaultData[device] = {
-        flow: 0,
-        total: 0,
-        timestamp: Math.floor(Date.now() / 1000),
-        last_update: new Date().toISOString(),
-        debug: {
-          message: 'Using default data - database fetch failed'
-        }
-      };
-    });
-    
-    return defaultData;
-  }
-
   try {
-    const result = await getSupabaseData();
-    let deviceData;
-    let dataSource = 'supabase';
-    let debugInfo = {};
+    const diagnostics = {};
     
-    if (result.data === false) {
-      deviceData = getDefaultData();
-      dataSource = 'default';
-      debugInfo.error = result.error;
-    } else {
-      deviceData = result.data;
-      debugInfo = result.debug;
-    }
-    
-    // Calculate data age
-    Object.keys(deviceData).forEach(device => {
-      const currentTime = Math.floor(Date.now() / 1000);
-      const dataTime = deviceData[device].timestamp;
-      const age = currentTime - dataTime;
-      
-      deviceData[device].data_age_seconds = age;
-      deviceData[device].is_recent = age < 300; // Recent if less than 5 minutes old
+    // Test 1: Try to get all data from table (no filters)
+    console.log('=== DIAGNOSTIC TEST 1: Get all data ===');
+    const allDataUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?limit=5`;
+    const allDataResponse = await fetch(allDataUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
     });
     
-    // Prepare response
-    const response = {
-      status: 'success',
-      devices: deviceData,
-      timestamp: Math.floor(Date.now() / 1000),
-      data_source: dataSource,
-      last_fetch: new Date().toISOString(),
-      debug_info: debugInfo,
-      server_time: new Date().toISOString(),
-      server_unix_time: Math.floor(Date.now() / 1000)
+    diagnostics.test1_all_data = {
+      url: allDataUrl,
+      status: allDataResponse.status,
+      ok: allDataResponse.ok,
+      data: allDataResponse.ok ? await allDataResponse.json() : await allDataResponse.text()
     };
     
-    return res.status(200).json(response);
+    // Test 2: Try to get toilet data specifically
+    console.log('=== DIAGNOSTIC TEST 2: Get toilet data ===');
+    const toiletUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=eq.toilet&order=timestamp.desc&limit=5`;
+    const toiletResponse = await fetch(toiletUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
+    });
+    
+    diagnostics.test2_toilet_data = {
+      url: toiletUrl,
+      status: toiletResponse.status,
+      ok: toiletResponse.ok,
+      data: toiletResponse.ok ? await toiletResponse.json() : await toiletResponse.text()
+    };
+    
+    // Test 3: Try different ordering
+    console.log('=== DIAGNOSTIC TEST 3: Different ordering ===');
+    const altOrderUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=eq.toilet&order=id.desc&limit=3`;
+    const altOrderResponse = await fetch(altOrderUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
+    });
+    
+    diagnostics.test3_alt_order = {
+      url: altOrderUrl,
+      status: altOrderResponse.status,
+      ok: altOrderResponse.ok,
+      data: altOrderResponse.ok ? await altOrderResponse.json() : await altOrderResponse.text()
+    };
+    
+    // Test 4: Try without ordering
+    console.log('=== DIAGNOSTIC TEST 4: No ordering ===');
+    const noOrderUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=eq.toilet&limit=3`;
+    const noOrderResponse = await fetch(noOrderUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
+    });
+    
+    diagnostics.test4_no_order = {
+      url: noOrderUrl,
+      status: noOrderResponse.status,
+      ok: noOrderResponse.ok,
+      data: noOrderResponse.ok ? await noOrderResponse.json() : await noOrderResponse.text()
+    };
+
+    // Test 5: Check what columns exist
+    console.log('=== DIAGNOSTIC TEST 5: Check table structure ===');
+    const structureUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&limit=1`;
+    const structureResponse = await fetch(structureUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
+    });
+    
+    diagnostics.test5_structure = {
+      url: structureUrl,
+      status: structureResponse.status,
+      ok: structureResponse.ok,
+      data: structureResponse.ok ? await structureResponse.json() : await structureResponse.text()
+    };
+
+    // Test 6: Try case-insensitive search
+    console.log('=== DIAGNOSTIC TEST 6: Case insensitive search ===');
+    const caseUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=ilike.toilet&limit=3`;
+    const caseResponse = await fetch(caseUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY
+      }
+    });
+    
+    diagnostics.test6_case_insensitive = {
+      url: caseUrl,
+      status: caseResponse.status,
+      ok: caseResponse.ok,
+      data: caseResponse.ok ? await caseResponse.json() : await caseResponse.text()
+    };
+
+    // Now try the original logic with the working query
+    let deviceData = {};
+    
+    // Use the query that worked from diagnostics
+    const devices = ['toilet', 'faucet', 'garden'];
+    
+    for (const device of devices) {
+      // Try the simplest query first
+      const simpleUrl = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?device_name=eq.${device}&limit=1`;
+      
+      const response = await fetch(simpleUrl, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'apikey': SUPABASE_KEY
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          // Get the most recent record (assuming the last one is most recent)
+          const latest = data[data.length - 1];
+          
+          deviceData[device] = {
+            flow: parseFloat(latest.flow_rate) || 0,
+            total: parseFloat(latest.total_consumed) || 0,
+            timestamp: Math.floor(new Date(latest.timestamp).getTime() / 1000),
+            last_update: latest.timestamp,
+            debug: {
+              raw_data: latest,
+              found_records: data.length
+            }
+          };
+        } else {
+          deviceData[device] = {
+            flow: 0,
+            total: 0,
+            timestamp: Math.floor(Date.now() / 1000),
+            last_update: new Date().toISOString(),
+            debug: { message: 'No data found' }
+          };
+        }
+      }
+    }
+
+    return res.status(200).json({
+      status: 'diagnostic',
+      message: 'This is a diagnostic response to debug the Supabase connection',
+      diagnostics: diagnostics,
+      devices: deviceData,
+      timestamp: Math.floor(Date.now() / 1000),
+      server_time: new Date().toISOString()
+    });
     
   } catch (error) {
-    console.error('get-data error:', error);
+    console.error('Diagnostic error:', error);
     return res.status(500).json({
       status: 'error',
-      message: 'Failed to fetch data',
+      message: 'Diagnostic failed',
       error: error.message,
-      devices: getDefaultData(),
-      timestamp: Math.floor(Date.now() / 1000),
-      data_source: 'error_fallback',
-      debug_info: {
-        error: error.message,
-        stack: error.stack
-      }
+      timestamp: Math.floor(Date.now() / 1000)
     });
   }
 }
