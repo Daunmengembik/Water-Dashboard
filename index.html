@@ -731,7 +731,7 @@
         // Alternative: Fetch data from your PHP endpoint instead of directly from Supabase
         async function getDataFromPHP() {
             try {
-                const response = await fetch('get_data.php', {
+                const response = await fetch('/api/get-data', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
