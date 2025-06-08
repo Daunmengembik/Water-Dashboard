@@ -7,6 +7,7 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
@@ -370,6 +371,124 @@
             letter-spacing: 0.5px;
             margin: 0;
         }
+        
+        .time-range-selector {
+                margin: 20px 0;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+            
+            .time-range-selector:hover {
+                background: rgba(255, 255, 255, 0.15);
+                transform: translateY(-2px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            }
+            
+            .selector-label {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 16px;
+                font-weight: 500;
+                margin-bottom: 15px;
+                display: block;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            
+            .range-buttons {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .range-btn {
+                padding: 12px 20px;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                color: rgba(255, 255, 255, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                overflow: hidden;
+                min-width: 60px;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            }
+            
+            .range-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                transition: left 0.5s;
+            }
+            
+            .range-btn:hover {
+                background: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.4);
+                color: rgba(255, 255, 255, 1);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            }
+            
+            .range-btn:hover::before {
+                left: 100%;
+            }
+            
+            .range-btn.active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-color: rgba(255, 255, 255, 0.3);
+                color: #ffffff;
+                transform: translateY(-3px);
+                box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            }
+            
+            .range-btn.active::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+                border-radius: 12px;
+                pointer-events: none;
+            }
+            
+            .range-btn:active {
+                transform: translateY(-1px);
+                transition: transform 0.1s;
+            }
+            
+            @media (max-width: 768px) {
+                .range-buttons {
+                    gap: 8px;
+                }
+                
+                .range-btn {
+                    padding: 10px 16px;
+                    font-size: 13px;
+                    min-width: 50px;
+                }
+                
+                .time-range-selector {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+            }
 
         /* Responsive design for new grids */
         @media (max-width: 768px) {
@@ -424,7 +543,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-logo"><strong>Smart Water Dashboard</strong></div>
+        <div class="nav-logo"><strong>WaterWwateran Dashboard</strong></div>
          <ul class="nav-links">
             <li><a href="#dashboard-offset">Dashboard</a></li>
             <li><a href="#chart-section">Charts</a></li>
@@ -446,7 +565,7 @@
         
         <div id="header" class="dashboard-header glass glow">
             <div>
-                <h1>Smart Water Dashboard</h1>
+                <h1>Water Dashboard</h1>
                 <p class="date" id="lastUpdate">May 28, 2025</p>
             </div>
             <div class="user-info">
@@ -517,8 +636,16 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.min.js"></script>
-    <script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>
+        // ======================
+        // Supabase Configuration
+        // ======================
+        const supabaseUrl = 'https://hslsweymoroniqzjluse.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHN3ZXltb3JvbmlxempsdXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDgzOTQsImV4cCI6MjA2MjI4NDM5NH0.RxN7hDAWpyuUFdHFfSXKgJZhWQJPFWulDTT-496Y-c8'
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
+
         // ======================
         // Configuration
         // ======================
@@ -533,114 +660,414 @@
             all: '#4facfe'
         };
 
-        // Device Data Storage
+        // Time range configuration
+        let selectedTimeRange = 300; // Default: 5 minutes
+        const timeRanges = {
+            15: { seconds: 15, label: '15s', maxPoints: 15 },
+            300: { seconds: 300, label: '5m', maxPoints: 100 },
+            3600: { seconds: 3600, label: '1h', maxPoints: 360 },
+            21600: { seconds: 21600, label: '6h', maxPoints: 720 },
+            86400: { seconds: 86400, label: '24h', maxPoints: 1440 }
+        };
+
+        let timeLabels = [];
+        let flowData = [];
+        let totalData = [];
+
+        const loadingElement = document.getElementById("loading");
+        const errorElement = document.getElementById("errorMessage");
+        const flowBox = document.getElementById("flowBox");
+
+        // Device Data Storage - Enhanced to store more historical data
         let devicesData = {};
+        let allHistoricalData = {}; // Store all data points for different time ranges
         let flowChart, deviceChart, dailyChart;
 
         // ======================
-        // Data Generation Functions
+        // Supabase Functions
         // ======================
-        function generateRandomFlowData(points = 20) {
-            const data = [];
+        async function getDataFromSupabase(timeRangeSeconds = 300) {
+            try {
+                const startTime = new Date(Date.now() - (timeRangeSeconds * 1000)).toISOString();
+                
+                const { data, error } = await supabaseClient
+                    .from('flow_data') // Replace with your actual table name
+                    .select('*')
+                    .gte('timestamp', startTime)
+                    .order('timestamp', { ascending: true });
+
+                if (error) {
+                    console.error('Error fetching data:', error);
+                    return null;
+                }
+                
+                return data;
+            } catch (err) {
+                console.error('Supabase fetch error:', err);
+                return null;
+            }
+        }
+
+        async function getLatestDataFromSupabase() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('flow_data')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(3); // Get latest data for each device
+
+                if (error) {
+                    console.error('Error fetching latest data:', error);
+                    return null;
+                }
+                
+                return data;
+            } catch (err) {
+                console.error('Supabase latest data fetch error:', err);
+                return null;
+            }
+        }
+
+        // Alternative: Fetch data from your PHP endpoint instead of directly from Supabase
+        async function getDataFromPHP() {
+            try {
+                const response = await fetch('get_data.php', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    return result.devices;
+                } else {
+                    console.error('PHP endpoint error:', result.message);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Error fetching from PHP:', error);
+                return null;
+            }
+        }
+
+        // ======================
+        // Fixed Data Processing
+        // ======================
+        function updateLocalDeviceData(deviceName, flowRate, total) {
             const now = Date.now();
             
-            for (let i = points; i >= 0; i--) {
-                const timestamp = now - (i * 60000); // 1 minute intervals
-                const flowRate = Math.random() * 15; // Random 0-15 L/min
-                data.push([timestamp, parseFloat(flowRate.toFixed(2))]);
-            }
-            return data;
-        }
-
-        function calculateTotalConsumption(flowData) {
-            // Calculate total consumption based on flow rate over time
-            // Each data point represents 1 minute of flow, so L/min * 1 min = L
-            let total = 0;
-            for (let i = 1; i < flowData.length; i++) {
-                const timeDiff = (flowData[i][0] - flowData[i-1][0]) / 60000; // Convert ms to minutes
-                const avgFlowRate = (flowData[i][1] + flowData[i-1][1]) / 2; // Average flow between points
-                total += avgFlowRate * timeDiff; // L/min * minutes = L
-            }
-            return total;
-        }
-
-        function initializeRandomData() {
-            // Initialize each device starting with 0 consumption
-            devices.forEach(device => {
-                devicesData[device] = {
-                    flow: [[Date.now(), 0]], // Start with 0 flow rate
-                    daily: 0 // Start with 0 consumption
+            // Ensure flowRate and total are numbers
+            const safeFlowRate = Number(flowRate) || 0;
+            const safeTotal = Number(total) || 0;
+            
+            const newPoint = [now, parseFloat(safeFlowRate.toFixed(2))];
+            
+            // Initialize device data if not exists
+            if (!devicesData[deviceName]) {
+                devicesData[deviceName] = {
+                    flow: [],
+                    daily: 0
                 };
-            });
+                allHistoricalData[deviceName] = [];
+            }
             
-            // Initialize combined 'all' data
-            devicesData.all = {
-                flow: [[Date.now(), 0]],
-                daily: 0
-            };
+            // Add to historical data - ensure it's a proper array
+            if (Array.isArray(allHistoricalData[deviceName])) {
+                allHistoricalData[deviceName].push(newPoint);
+            } else {
+                allHistoricalData[deviceName] = [newPoint];
+            }
+            
+            // Update daily consumption with the total from microcontroller
+            devicesData[deviceName].daily = parseFloat(safeTotal.toFixed(2));
+            
+            // Keep only last 2000 points in historical data to prevent memory issues
+            if (allHistoricalData[deviceName].length > 2000) {
+                allHistoricalData[deviceName] = allHistoricalData[deviceName].slice(-1000);
+            }
         }
 
-        function generateNewDataPoint() {
-            const now = Date.now();
+        // ======================
+        // Time Range Functions
+        // ======================
+        function createTimeRangeSelector() {
+            // Create glassmorphism time range selector with CSS
+            const selectorHTML = `
+                <style>
+                    .time-range-selector {
+                        margin: 20px 0;
+                        padding: 20px;
+                        background: rgba(255, 255, 255, 0.1);
+                        backdrop-filter: blur(10px);
+                        -webkit-backdrop-filter: blur(10px);
+                        border-radius: 16px;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                        text-align: center;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .time-range-selector:hover {
+                        background: rgba(255, 255, 255, 0.15);
+                        transform: translateY(-2px);
+                        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+                    }
+                    
+                    .selector-label {
+                        color: rgba(255, 255, 255, 0.9);
+                        font-size: 16px;
+                        font-weight: 500;
+                        margin-bottom: 15px;
+                        display: block;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                    }
+                    
+                    .range-buttons {
+                        display: flex;
+                        gap: 12px;
+                        justify-content: center;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .range-btn {
+                        padding: 12px 20px;
+                        background: rgba(255, 255, 255, 0.1);
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        color: rgba(255, 255, 255, 0.8);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 12px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 500;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        position: relative;
+                        overflow: hidden;
+                        min-width: 60px;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+                    }
+                    
+                    .range-btn::before {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: -100%;
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+                        transition: left 0.5s;
+                    }
+                    
+                    .range-btn:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                        border-color: rgba(255, 255, 255, 0.4);
+                        color: rgba(255, 255, 255, 1);
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+                    }
+                    
+                    .range-btn:hover::before {
+                        left: 100%;
+                    }
+                    
+                    .range-btn.active {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-color: rgba(255, 255, 255, 0.3);
+                        color: #ffffff;
+                        transform: translateY(-3px);
+                        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+                    }
+                    
+                    .range-btn.active::after {
+                        content: '';
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+                        border-radius: 12px;
+                        pointer-events: none;
+                    }
+                    
+                    .range-btn:active {
+                        transform: translateY(-1px);
+                        transition: transform 0.1s;
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .range-buttons {
+                            gap: 8px;
+                        }
+                        
+                        .range-btn {
+                            padding: 10px 16px;
+                            font-size: 13px;
+                            min-width: 50px;
+                        }
+                        
+                        .time-range-selector {
+                            padding: 15px;
+                            margin: 15px 0;
+                        }
+                    }
+                </style>
+                <div class="time-range-selector">
+                    <span class="selector-label"> Time Range</span>
+                    <div class="range-buttons">
+                        ${Object.entries(timeRanges).map(([key, range]) => 
+                            `<button class="range-btn ${key == selectedTimeRange ? 'active' : ''}" 
+                                    onclick="changeTimeRange(${key})">
+                                ${range.label}
+                            </button>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
             
-            // Generate new data for each device
-            devices.forEach(device => {
-                const newFlow = Math.random() * 15;
-                const newPoint = [now, parseFloat(newFlow.toFixed(2))];
+            // Insert before the chart
+            const chartContainer = document.getElementById('flowChart');
+            if (chartContainer && !document.querySelector('.time-range-selector')) {
+                chartContainer.insertAdjacentHTML('beforebegin', selectorHTML);
+            }
+        }
+
+        async function changeTimeRange(newRange) {
+            selectedTimeRange = newRange;
+            
+            // Update button states
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Fetch data from Supabase for the new time range
+            await loadDataFromSupabase();
+            updateCharts();
+            console.log(`Time range changed to: ${timeRanges[newRange].label}`);
+        }
+
+        async function loadDataFromSupabase() {
+            try {
+                showLoading(true);
+                const data = await getDataFromSupabase(selectedTimeRange);
                 
-                // Calculate consumption increment from the last data point
-                const lastPoint = devicesData[device].flow.slice(-1)[0];
-                if (lastPoint) {
-                    const timeDiff = (now - lastPoint[0]) / 60000; // Convert ms to minutes
-                    const avgFlowRate = (newFlow + lastPoint[1]) / 2; // Average flow between points
-                    const consumptionIncrement = avgFlowRate * timeDiff; // L/min * minutes = L
-                    devicesData[device].daily += consumptionIncrement; // Accumulate consumption
+                if (data && data.length > 0) {  
+                    // Reset device data
+                    devices.forEach(device => {
+                        devicesData[device] = { flow: [], daily: 0 };
+                        allHistoricalData[device] = [];
+                    });
+                    
+                    // Process the fetched data
+                    data.forEach(record => {
+                        const timestamp = new Date(record.timestamp).getTime();
+                        const deviceName = record.device_name;
+                        const flowRate = record.flow_rate;
+                        const totalConsumed = record.total_consumed;
+                        
+                        if (devices.includes(deviceName)) {
+                            // Add to historical data
+                            allHistoricalData[deviceName].push([timestamp, flowRate]);
+                            
+                            // Update daily consumption with latest total
+                            devicesData[deviceName].daily = Math.max(devicesData[deviceName].daily, totalConsumed);
+                        }
+                    });
+                    
+                    // Filter data by current time range
+                    filterDataByTimeRange();
                 }
                 
-                // Add new point and remove old ones (keep last 20 points)
-                devicesData[device].flow.push(newPoint);
-                if (devicesData[device].flow.length > 20) {
-                    devicesData[device].flow.shift();
+                showLoading(false);
+            } catch (error) {
+                console.error('Error loading data from Supabase:', error);
+                showError('Failed to load data from database');
+                showLoading(false);
+            }
+        }
+
+        function filterDataByTimeRange() {
+            const now = Date.now();
+            const rangeMs = selectedTimeRange * 1000; // Convert to milliseconds
+            const cutoffTime = now - rangeMs;
+            
+            // Filter data for each device based on selected time range
+            devices.forEach(device => {
+                if (allHistoricalData[device]) {
+                    devicesData[device].flow = allHistoricalData[device]
+                        .filter(point => point[0] >= cutoffTime)
+                        .slice(-timeRanges[selectedTimeRange].maxPoints); // Limit points for performance
                 }
             });
             
-            // Calculate combined 'all' data
-            const totalFlow = devices.reduce((sum, device) => {
-                const lastPoint = devicesData[device].flow.slice(-1)[0];
-                return sum + (lastPoint ? lastPoint[1] : 0);
-            }, 0);
+            // Calculate 'all' data
+            const allFlowData = [];
+            const maxLength = Math.max(...devices.map(device => devicesData[device].flow.length));
             
-            // Calculate consumption increment for 'all' devices
-            const lastAllPoint = devicesData.all.flow.slice(-1)[0];
-            if (lastAllPoint) {
-                const timeDiff = (now - lastAllPoint[0]) / 60000;
-                const avgFlowRate = (totalFlow + lastAllPoint[1]) / 2;
-                const consumptionIncrement = avgFlowRate * timeDiff;
-                devicesData.all.daily += consumptionIncrement;
+            for (let i = 0; i < maxLength; i++) {
+                let totalFlow = 0;
+                let timestamp = null;
+                
+                devices.forEach(device => {
+                    if (devicesData[device].flow[i]) {
+                        totalFlow += devicesData[device].flow[i][1];
+                        timestamp = devicesData[device].flow[i][0];
+                    }
+                });
+                
+                if (timestamp !== null) {
+                    allFlowData.push([timestamp, totalFlow]);
+                }
             }
             
-            const newAllPoint = [now, parseFloat(totalFlow.toFixed(2))];
-            devicesData.all.flow.push(newAllPoint);
-            if (devicesData.all.flow.length > 20) {
-                devicesData.all.flow.shift();
+            if (!devicesData.all) {
+                devicesData.all = { flow: [], daily: 0 };
             }
+            devicesData.all.flow = allFlowData;
+            devicesData.all.daily = devices.reduce((sum, device) => sum + devicesData[device].daily, 0);
         }
 
         // ======================
         // Chart Initialization
         // ======================
         function initCharts() {
+            // Create time range selector first
+            createTimeRangeSelector();
+            
             // Real-time Flow Chart (Line) - Now shows all 3 devices separately
             flowChart = Highcharts.chart('flowChart', {
                 chart: {
                     type: 'spline',
                     backgroundColor: 'transparent',
-                    animation: false
+                    animation: false,
+                    zoomType: 'x' // Allow zooming
                 },
-                title: { text: 'Real-time Flow Rate (L/min)', style: { color: '#fff' } },
+                title: { 
+                    text: `Real-time Flow Rate (${timeRanges[selectedTimeRange].label})`, 
+                    style: { color: '#fff' } 
+                },
                 xAxis: {
                     type: 'datetime',
-                    labels: { style: { color: '#ddd' } },
+                    labels: { 
+                        style: { color: '#ddd' },
+                        formatter: function() {
+                            // Format labels based on time range
+                            if (selectedTimeRange <= 300) { // 15s and 5m
+                                return Highcharts.dateFormat('%H:%M:%S', this.value);
+                            } else if (selectedTimeRange <= 3600) { // 1h
+                                return Highcharts.dateFormat('%H:%M', this.value);
+                            } else { // 6h and 24h
+                                return Highcharts.dateFormat('%m/%d %H:%M', this.value);
+                            }
+                        }
+                    },
                     gridLineColor: 'rgba(255,255,255,0.1)'
                 },
                 yAxis: {
@@ -652,19 +1079,19 @@
                 series: [
                     {
                         name: 'Toilet',
-                        data: devicesData.toilet.flow,
+                        data: [],
                         color: colors.toilet,
                         animation: false
                     },
                     {
                         name: 'Faucet',
-                        data: devicesData.faucet.flow,
+                        data: [],
                         color: colors.faucet,
                         animation: false
                     },
                     {
                         name: 'Garden',
-                        data: devicesData.garden.flow,
+                        data: [],
                         color: colors.garden,
                         animation: false
                     }
@@ -676,7 +1103,22 @@
                 credits: { enabled: false },
                 plotOptions: {
                     series: {
-                        animation: false
+                        animation: false,
+                        marker: {
+                            enabled: selectedTimeRange <= 300 ? true : false,
+                            radius: 2
+                        }
+                    }
+                },
+                tooltip: {
+                    shared: true,
+                    formatter: function() {
+                        let tooltip = '<b>' + Highcharts.dateFormat('%H:%M:%S', this.x) + '</b><br/>';
+                        this.points.forEach(point => {
+                            tooltip += '<span style="color:' + point.color + '">' + point.series.name + 
+                                    '</span>: <b>' + point.y.toFixed(2) + ' L/min</b><br/>';
+                        });
+                        return tooltip;
                     }
                 }
             });
@@ -691,11 +1133,7 @@
                 series: [{
                     name: 'Usage',
                     colorByPoint: true,
-                    data: devices.map((device, index) => ({
-                        name: device.charAt(0).toUpperCase() + device.slice(1),
-                        y: devicesData[device].daily,
-                        color: [colors.toilet, colors.faucet, colors.garden][index]
-                    }))
+                    data: []
                 }],
                 legend: { itemStyle: { color: '#ccc' } },
                 credits: { enabled: false },
@@ -728,10 +1166,7 @@
                 },
                 series: [{
                     name: 'Usage',
-                    data: devices.map((device, index) => ({
-                        y: devicesData[device].daily,
-                        color: [colors.toilet, colors.faucet, colors.garden][index]
-                    })),
+                    data: [],
                     showInLegend: false
                 }],
                 legend: { itemStyle: { color: '#ccc' } },
@@ -740,28 +1175,93 @@
         }
 
         // ======================
-        // Chart Updates
+        // Fixed Chart Updates
         // ======================
         function updateCharts() {
-            // Update flow chart with all 3 device series
-            flowChart.series[0].setData(devicesData.toilet.flow, false, false);
-            flowChart.series[1].setData(devicesData.faucet.flow, false, false);
-            flowChart.series[2].setData(devicesData.garden.flow, true, false);
+            // Update chart title with current time range
+            flowChart.setTitle({
+                text: `Real-time Flow Rate (${timeRanges[selectedTimeRange].label})`
+            });
+            
+            // Ensure data is in correct format for Highcharts
+            // Data should be array of [timestamp, value] pairs
+            const toiletData = (devicesData.toilet?.flow || []).map(point => {
+                // Ensure each point is [timestamp, value]
+                if (Array.isArray(point) && point.length >= 2) {
+                    return [Number(point[0]), Number(point[1])];
+                }
+                return [Date.now(), 0];
+            });
+            
+            const faucetData = (devicesData.faucet?.flow || []).map(point => {
+                if (Array.isArray(point) && point.length >= 2) {
+                    return [Number(point[0]), Number(point[1])];
+                }
+                return [Date.now(), 0];
+            });
+            
+            const gardenData = (devicesData.garden?.flow || []).map(point => {
+                if (Array.isArray(point) && point.length >= 2) {
+                    return [Number(point[0]), Number(point[1])];
+                }
+                return [Date.now(), 0];
+            });
+            
+            // Update flow chart with properly formatted data
+            try {
+                flowChart.series[0].setData(toiletData, false, false);
+                flowChart.series[1].setData(faucetData, false, false);
+                flowChart.series[2].setData(gardenData, true, false);
+            } catch (e) {
+                console.error('Error updating flow chart:', e);
+                console.log('Data formats:', { toiletData, faucetData, gardenData });
+            }
 
-            // Update device distribution chart
-            const pieData = devices.map((device, index) => ({
-                name: device.charAt(0).toUpperCase() + device.slice(1),
-                y: devicesData[device].daily,
-                color: [colors.toilet, colors.faucet, colors.garden][index]
-            }));
-            deviceChart.series[0].setData(pieData, true);
+            // Update markers visibility based on time range
+            const showMarkers = selectedTimeRange <= 300;
+            flowChart.series.forEach(series => {
+                series.update({
+                    marker: {
+                        enabled: showMarkers,
+                        radius: 2
+                    }
+                }, false);
+            });
+            
+            flowChart.redraw();
 
-            // Update daily usage chart
-            const barData = devices.map((device, index) => ({
-                y: devicesData[device].daily,
-                color: [colors.toilet, colors.faucet, colors.garden][index]
-            }));
-            dailyChart.series[0].setData(barData, true);
+            // Update device distribution chart - ensure proper data format
+            const pieData = devices.map((device, index) => {
+                const value = devicesData[device]?.daily || 0;
+                return {
+                    name: device.charAt(0).toUpperCase() + device.slice(1),
+                    y: Number(value), // Ensure it's a number
+                    color: [colors.toilet, colors.faucet, colors.garden][index]
+                };
+            });
+            
+            try {
+                deviceChart.series[0].setData(pieData, true);
+            } catch (e) {
+                console.error('Error updating pie chart:', e);
+                console.log('Pie data format:', pieData);
+            }
+
+            // Update daily usage chart - ensure proper data format
+            const barData = devices.map((device, index) => {
+                const value = devicesData[device]?.daily || 0;
+                return {
+                    y: Number(value), // Ensure it's a number
+                    color: [colors.toilet, colors.faucet, colors.garden][index]
+                };
+            });
+            
+            try {
+                dailyChart.series[0].setData(barData, true);
+            } catch (e) {
+                console.error('Error updating bar chart:', e);
+                console.log('Bar data format:', barData);
+            }
         }
 
         function updateKPIs() {
@@ -770,48 +1270,172 @@
 
             // Update individual device flow rates (current/latest values)
             document.getElementById('flowRate1').textContent = 
-                `${(devicesData.toilet.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+                `${(devicesData.toilet?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
             document.getElementById('flowRate2').textContent = 
-                `${(devicesData.faucet.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+                `${(devicesData.faucet?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
             document.getElementById('flowRate3').textContent = 
-                `${(devicesData.garden.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+                `${(devicesData.garden?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
             
             // Update individual device consumption
-            document.getElementById('totalWater1').textContent = devicesData.toilet.daily.toFixed(1);
-            document.getElementById('totalWater2').textContent = devicesData.faucet.daily.toFixed(1);
-            document.getElementById('totalWater3').textContent = devicesData.garden.daily.toFixed(1);
+            document.getElementById('totalWater1').textContent = (devicesData.toilet?.daily || 0).toFixed(1);
+            document.getElementById('totalWater2').textContent = (devicesData.faucet?.daily || 0).toFixed(1);
+            document.getElementById('totalWater3').textContent = (devicesData.garden?.daily || 0).toFixed(1);
 
-            // Update trend (simple random percentage for demo)
-            const trendPercent = (Math.random() * 20 - 10).toFixed(1);
+            // Update trend (calculate from recent data)
+            const trendPercent = calculateTrend();
             const trendIcon = trendPercent >= 0 ? '↗' : '↘';
             document.getElementById('totalTrend').textContent = 
                 `${trendIcon} ${Math.abs(trendPercent)}% vs yesterday`;
 
-            // Update alerts (random for demo)
-            alertCount = Math.floor(Math.random() * 3);
-            document.getElementById('alerts').textContent = alertCount;
-            document.getElementById('alertDevice').textContent = 
-                alertCount > 0 ? devices[Math.floor(Math.random() * devices.length)].charAt(0).toUpperCase() + 
-                devices[Math.floor(Math.random() * devices.length)].slice(1) : '-';
+            // Update alerts based on flow rates
+            updateAlerts();
         }
 
-        function simulateRealTimeData() {
-            generateNewDataPoint();
-            updateCharts();
-            updateKPIs();
+        function calculateTrend() {
+            // Simple trend calculation based on current vs average flow
+            const currentTotal = devices.reduce((sum, device) => {
+                return sum + (devicesData[device]?.flow.slice(-1)[0]?.[1] || 0);
+            }, 0);
+            
+            const avgFlow = devices.reduce((sum, device) => {
+                const flowData = devicesData[device]?.flow || [];
+                const avg = flowData.length > 0 ? 
+                    flowData.reduce((s, point) => s + point[1], 0) / flowData.length : 0;
+                return sum + avg;
+            }, 0);
+            
+            if (avgFlow === 0) return 0;
+            return ((currentTotal - avgFlow) / avgFlow * 100).toFixed(1);
+        }
+
+        function updateAlerts() {
+            alertCount = 0;
+            let alertDevice = '-';
+            
+            devices.forEach(device => {
+                const currentFlow = devicesData[device]?.flow.slice(-1)[0]?.[1] || 0;
+                if (currentFlow > 10) { // Alert threshold: 10 L/min
+                    alertCount++;
+                    alertDevice = device.charAt(0).toUpperCase() + device.slice(1);
+                }
+            });
+            
+            document.getElementById('alerts').textContent = alertCount;
+            document.getElementById('alertDevice').textContent = alertDevice;
+        }
+
+        // ======================
+        // Utility Functions
+        // ======================
+        function showLoading(show) {
+            if (loadingElement) {
+                loadingElement.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function showError(message) {
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                setTimeout(() => {
+                    errorElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // ======================
+        // Real-time Data Management
+        // ======================
+        async function fetchAndUpdateData() {
+            try {
+                // Get latest data from Supabase (since microcontrollers POST to api.php which saves to Supabase)
+                const latestData = await getLatestDataFromSupabase();
+                
+                if (latestData && latestData.length > 0) {
+                    latestData.forEach(record => {
+                        const deviceName = record.device_name;
+                        const flowRate = record.flow_rate;
+                        const totalConsumed = record.total_consumed;
+                        
+                        if (devices.includes(deviceName)) {
+                            updateLocalDeviceData(deviceName, flowRate, totalConsumed);
+                        }
+                    });
+                }
+                
+                // Filter data by current time range
+                filterDataByTimeRange();
+                
+                // Update charts and KPIs
+                updateCharts();
+                updateKPIs();
+                
+                console.log('Data updated successfully');
+            } catch (error) {
+                console.error('Error in fetchAndUpdateData:', error);
+                showError('Failed to fetch real-time data');
+            }
+        }
+        
+        // ======================
+        // Debug Function - Add this to help troubleshoot
+        // ======================
+        function debugDataFormats() {
+            console.log('=== DEBUG DATA FORMATS ===');
+            console.log('devicesData:', devicesData);
+            console.log('allHistoricalData:', allHistoricalData);
+            
+            devices.forEach(device => {
+                if (devicesData[device] && devicesData[device].flow) {
+                    console.log(`${device} flow data sample:`, devicesData[device].flow.slice(0, 3));
+                }
+            });
+            console.log('=== END DEBUG ===');
         }
 
         // ======================
         // Initialization
         // ======================
-        window.onload = () => {
-            initializeRandomData();
-            initCharts();
-            updateKPIs();
+        async function initializeSystem() {
+            try {
+                showLoading(true);
+                
+                // Initialize device data structure
+                devices.forEach(device => {
+                    devicesData[device] = { flow: [], daily: 0 };
+                    allHistoricalData[device] = [];
+                });
+                devicesData.all = { flow: [], daily: 0 };
+                
+                // Initialize charts
+                initCharts();
+                
+                // Load initial data from Supabase
+                await loadDataFromSupabase();
+                
+                // Update charts and KPIs
+                updateCharts();
+                updateKPIs();
+                
+                showLoading(false);
+                
+                console.log('System initialized successfully');
+            } catch (error) {
+                console.error('Error initializing system:', error);
+                showError('Failed to initialize system');
+                showLoading(false);
+            }
+        }
+
+        window.onload = async () => {
+            await initializeSystem();
             
-            // Update data every 3 seconds
-            setInterval(simulateRealTimeData, 3000);
+            // Fetch real-time data every 10 seconds
+            setInterval(fetchAndUpdateData, 10000);
+            
+            // Refresh data from Supabase every 5 minutes to sync with database
+            setInterval(loadDataFromSupabase, 300000);
         };
-    </script>
-</body>
+        </script>
+    </body>
 </html>
