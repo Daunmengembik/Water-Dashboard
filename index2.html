@@ -496,7 +496,7 @@
                 sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
                 
                 const { data, error } = await supabaseClient
-                    .from('water_usage') // Replace with your actual table name if different
+                    .from('flow_data') // Replace with your actual table name if different
                     .select('device_name, timestamp, total_consumed')
                     .gte('timestamp', sixMonthsAgo.toISOString())
                     .order('timestamp', { ascending: true });
