@@ -7,6 +7,7 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
@@ -455,7 +456,7 @@
     </div>
 
     <script>
-        // Supabase configuration
+       // Supabase configuration
         const supabaseUrl = 'https://hslsweymoroniqzjluse.supabase.co'
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHN3ZXltb3JvbmlxempsdXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDgzOTQsImV4cCI6MjA2MjI4NDM5NH0.RxN7hDAWpyuUFdHFfSXKgJZhWQJPFWulDTT-496Y-c8'
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
@@ -627,11 +628,15 @@
          */
         async function loadRealData() {
             try {
+                console.log('Starting to load real data...');
+                
                 // Show loading indicator
                 showLoadingIndicator();
                 
                 // Fetch raw data
                 const rawData = await fetchWaterUsageData();
+                
+                console.log('Raw data fetched:', rawData.length, 'records');
                 
                 if (rawData.length === 0) {
                     console.warn('No data found, using sample data');
@@ -639,6 +644,7 @@
                 } else {
                     // Process data into monthly format
                     monthlyData = processMonthlyData(rawData);
+                    console.log('Processed monthly data:', monthlyData);
                     
                     // If no monthly data after processing, use sample data
                     if (monthlyData.length === 0) {
@@ -647,15 +653,21 @@
                     }
                 }
                 
+                console.log('Final monthly data for charts:', monthlyData);
+                
                 // Update UI with real data
                 updateSummaryValues();
                 generateMonthlyBreakdown();
-                initializeCharts();
+                
+                // Small delay before initializing charts to ensure DOM is ready
+                setTimeout(() => {
+                    initializeCharts();
+                }, 500);
                 
                 // Hide loading indicator
                 hideLoadingIndicator();
                 
-                console.log('Data loaded successfully:', monthlyData);
+                console.log('Data loaded successfully');
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -664,10 +676,16 @@
                 hideLoadingIndicator();
                 monthlyData = getSampleData();
                 
+                console.log('Using sample data:', monthlyData);
+                
                 // Update UI with sample data
                 updateSummaryValues();
                 generateMonthlyBreakdown();
-                initializeCharts();
+                
+                // Small delay before initializing charts
+                setTimeout(() => {
+                    initializeCharts();
+                }, 500);
                 
                 // Show error message to user
                 showErrorMessage('Failed to load data from database. Using sample data instead.');
@@ -722,6 +740,29 @@
          * Initialize charts with real data
          */
         function initializeCharts() {
+            // Check if Highcharts is loaded
+            if (typeof Highcharts === 'undefined') {
+                console.error('Highcharts library is not loaded');
+                return;
+            }
+
+            // Check if chart containers exist
+            const containers = ['monthlyUsageChart', 'monthlyCostChart', 'cumulativeChart'];
+            const missingContainers = containers.filter(id => !document.getElementById(id));
+            
+            if (missingContainers.length > 0) {
+                console.error('Missing chart containers:', missingContainers);
+                return;
+            }
+
+            // Check if we have data
+            if (!monthlyData || monthlyData.length === 0) {
+                console.error('No data available for charts');
+                return;
+            }
+
+            console.log('Initializing charts with data:', monthlyData);
+
             // Monthly Usage Trends Chart
             Highcharts.chart('monthlyUsageChart', {
                 chart: {
@@ -1033,9 +1074,25 @@
         // ======================
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Load real data from Supabase
-            loadRealData();
+            // Add delay to ensure all libraries are loaded
+            setTimeout(() => {
+                loadRealData();
+            }, 1000);
         });
+
+        // Alternative initialization if DOMContentLoaded already fired
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => {
+                    loadRealData();
+                }, 1000);
+            });
+        } else {
+            // DOM is already loaded
+            setTimeout(() => {
+                loadRealData();
+            }, 1000);
+        }
 
         // Export functions for potential external use
         window.waterUsageApp = {
