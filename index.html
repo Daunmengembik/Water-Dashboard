@@ -1058,13 +1058,31 @@
                     labels: { 
                         style: { color: '#ddd' },
                         formatter: function() {
+                            // Create a proper Date object to handle local timezone
+                            const localTime = new Date(this.value);
                             // Format labels based on time range
                             if (selectedTimeRange <= 300) { // 15s and 5m
-                                return Highcharts.dateFormat('%H:%M:%S', this.value);
+                                return localTime.toLocaleTimeString('en-US', { 
+                                    hour12: false, 
+                                    hour: '2-digit', 
+                                    minute: '2-digit', 
+                                    second: '2-digit' 
+                                });
                             } else if (selectedTimeRange <= 3600) { // 1h
-                                return Highcharts.dateFormat('%H:%M', this.value);
+                                return localTime.toLocaleTimeString('en-US', { 
+                                    hour12: false, 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                });
                             } else { // 6h and 24h
-                                return Highcharts.dateFormat('%m/%d %H:%M', this.value);
+                                return localTime.toLocaleDateString('en-US', { 
+                                    month: '2-digit', 
+                                    day: '2-digit' 
+                                }) + ' ' + localTime.toLocaleTimeString('en-US', { 
+                                    hour12: false, 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                });
                             }
                         }
                     },
