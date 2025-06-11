@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Water Comparison Dashboard</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, 
+                #667eea 0%, 
+                #764ba2 25%, 
+                #f093fb 50%, 
+                #f5576c 75%, 
+                #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 20px 40px;
+            position: sticky;
+            top: 0px;
+            z-index: 1000;
+            margin: 0px;
+            overflow: hidden;
+            border-radius: 0px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-logo {
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links li a:hover {
+            color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-links li a.active {
+            color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .summary-card {
+            padding: 35px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .summary-card h3 {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .summary-card .main-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-card .sub-value {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 15px;
+        }
+
+        .summary-card .trend {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+        }
+
+        .trend.positive {
+            color: #ff6b6b;
+        }
+
+        .trend.negative {
+            color: #51cf66;
+        }
+
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            padding: 30px;
+            border-radius: 20px;
+            min-height: 400px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .chart-container h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .full-width-chart {
+            grid-column: 1 / -1;
+        }
+
+        .monthly-breakdown {
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+
+        .monthly-breakdown h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: center;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .month-card {
+            padding: 25px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .month-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .month-card h4 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+        }
+
+        .month-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+
+        .stat-value {
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .cost-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-card {
+            animation: slideIn 0.6s ease forwards;
+        }
+
+        .summary-card:nth-child(1) { animation-delay: 0.1s; }
+        .summary-card:nth-child(2) { animation-delay: 0.2s; }
+        .summary-card:nth-child(3) { animation-delay: 0.3s; }
+        .summary-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @media (max-width: 768px) {
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .month-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header h1 {
+                font-size: 32px;
+            }
+            
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo"><strong>WaterWateran Dashboard</strong></div>
+        <ul class="nav-links">
+            <li><a href="#index.html">Dashboard</a></li>
+            <li><a href="#monthly-comparison" class="active">Monthly Analysis</a></li>
+            <li><a href="#reports">Reports</a></li>
+            <li><a href="#settings">Settings</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header glass">
+            <h1>Monthly Water Usage & Cost Analysis</h1>
+            <p>Comprehensive monthly comparison of water consumption patterns, costs, and trends across all devices. Track your water usage efficiency and optimize costs with detailed insights.</p>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card glass">
+                <h3>This Month Total</h3>
+                <div class="main-value" id="currentMonthUsage">8,450 L</div>
+                <div class="sub-value cost-highlight" id="currentMonthCost">Rp 40,560</div>
+                <div class="trend positive" id="currentTrend">↗ +12% vs last month</div>
+            </div>
+            <div class="summary-card glass">
+                <h3>Last Month</h3>
+                <div class="main-value" id="lastMonthUsage">7,540 L</div>
+                <div class="sub-value cost-highlight" id="lastMonthCost">Rp 36,192</div>
+                <div class="trend negative">↘ -8% vs previous</div>
+            </div>
+            <div class="summary-card glass">
+                <h3>Average Monthly</h3>
+                <div class="main-value" id="averageUsage">7,890 L</div>
+                <div class="sub-value cost-highlight" id="averageCost">Rp 37,872</div>
+                <div class="trend">6-month average</div>
+            </div>
+            <div class="summary-card glass">
+                <h3>Cost Per Liter</h3>
+                <div class="main-value">Rp 4.80</div>
+                <div class="sub-value">per 1000L</div>
+                <div class="trend">Regional rate</div>
+            </div>
+        </div>
+
+        <div class="comparison-section">
+            <div class="chart-container glass">
+                <h3>Monthly Usage Trends</h3>
+                <div id="monthlyUsageChart" style="height: 350px;"></div>
+            </div>
+            <div class="chart-container glass">
+                <h3>Monthly Cost Analysis</h3>
+                <div id="monthlyCostChart" style="height: 350px;"></div>
+            </div>
+        </div>
+
+        <div class="chart-container glass full-width-chart">
+            <h3>Cumulative Usage by Device (6 Months)</h3>
+            <div id="cumulativeChart" style="height: 400px;"></div>
+        </div>
+
+        <div class="monthly-breakdown glass">
+            <h3>Detailed Monthly Breakdown</h3>
+            <div class="month-grid" id="monthlyBreakdown">
+                <!-- Monthly cards will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const supabaseUrl = 'https://hslsweymoroniqzjluse.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHN3ZXltb3JvbmlxempsdXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDgzOTQsImV4cCI6MjA2MjI4NDM5NH0.RxN7hDAWpyuUFdHFfSXKgJZhWQJPFWulDTT-496Y-c8'
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
+
+        // Configuration
+        let currentDeviceIndex = 0;
+        let selectedDevice = 'all';
+        let alertCount = 0;
+        const devices = ['toilet', 'faucet', 'garden'];
+        const colors = {
+            toilet: '#de5d83',
+            faucet: '#13bbaf', 
+            garden: '#fff7e7',
+            all: '#4facfe'
+        };
+
+        // Global variables for real data
+        let monthlyData = [];
+        let timeLabels = [];
+        let flowData = [];
+        let totalData = [];
+
+        // Cost per liter in Rupiah (adjust as needed)
+        const COST_PER_LITER = 4.8;
+
+        // ======================
+        // Data Fetching Functions
+        // ======================
+
+        /**
+         * Fetch water usage data from Supabase
+         */
+        async function fetchWaterUsageData() {
+            try {
+                // Fetch data from the last 6 months
+                const sixMonthsAgo = new Date();
+                sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                
+                const { data, error } = await supabaseClient
+                    .from('water_usage') // Replace with your actual table name if different
+                    .select('device_name, timestamp, total_consumed')
+                    .gte('timestamp', sixMonthsAgo.toISOString())
+                    .order('timestamp', { ascending: true });
+
+                if (error) {
+                    console.error('Error fetching data:', error);
+                    throw error;
+                }
+
+                return data || [];
+            } catch (error) {
+                console.error('Error in fetchWaterUsageData:', error);
+                return [];
+            }
+        }
+
+        /**
+         * Process raw data into monthly aggregated format
+         */
+        function processMonthlyData(rawData) {
+            const monthlyMap = new Map();
+            
+            rawData.forEach(record => {
+                const date = new Date(record.timestamp);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const monthLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                
+                if (!monthlyMap.has(monthKey)) {
+                    monthlyMap.set(monthKey, {
+                        month: monthLabel,
+                        toilet: 0,
+                        faucet: 0,
+                        garden: 0,
+                        total: 0,
+                        cost: 0,
+                        sortDate: new Date(date.getFullYear(), date.getMonth(), 1)
+                    });
+                }
+                
+                const monthData = monthlyMap.get(monthKey);
+                const consumption = parseFloat(record.total_consumed) || 0;
+                
+                // Aggregate data by device type
+                switch (record.device_name) {
+                    case 'toilet':
+                        monthData.toilet += consumption;
+                        break;
+                    case 'faucet':
+                        monthData.faucet += consumption;
+                        break;
+                    case 'garden':
+                        monthData.garden += consumption;
+                        break;
+                }
+                
+                // Calculate total and cost
+                monthData.total = monthData.toilet + monthData.faucet + monthData.garden;
+                monthData.cost = Math.round(monthData.total * COST_PER_LITER);
+            });
+            
+            // Convert Map to Array and sort by date
+            return Array.from(monthlyMap.values())
+                .sort((a, b) => a.sortDate - b.sortDate)
+                .map(item => {
+                    // Remove sortDate from final output
+                    const { sortDate, ...cleanItem } = item;
+                    return cleanItem;
+                });
+        }
+
+        /**
+         * Get sample data as fallback
+         */
+        function getSampleData() {
+            return [
+                { month: 'Jan 2025', toilet: 2800, faucet: 2100, garden: 1650, total: 6550, cost: 31440 },
+                { month: 'Feb 2025', toilet: 2950, faucet: 2300, garden: 1800, total: 7050, cost: 33840 },
+                { month: 'Mar 2025', toilet: 3100, faucet: 2400, garden: 2000, total: 7500, cost: 36000 },
+                { month: 'Apr 2025', toilet: 2700, faucet: 2200, garden: 2200, total: 7100, cost: 34080 },
+                { month: 'May 2025', toilet: 2600, faucet: 2140, garden: 2800, total: 7540, cost: 36192 },
+                { month: 'Jun 2025', toilet: 2850, faucet: 2300, garden: 3300, total: 8450, cost: 40560 }
+            ];
+        }
+
+        /**
+         * Show loading indicator
+         */
+        function showLoadingIndicator() {
+            // You can customize this based on your UI
+            const loadingHTML = `
+                <div id="loading-indicator" style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                ">
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 10px;">Loading water usage data...</div>
+                        <div style="width: 40px; height: 40px; border: 3px solid #333; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+            document.body.insertAdjacentHTML('beforeend', loadingHTML);
+        }
+
+        /**
+         * Hide loading indicator
+         */
+        function hideLoadingIndicator() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+        }
+
+        /**
+         * Fetch and process all data
+         */
+        async function loadRealData() {
+            try {
+                // Show loading indicator
+                showLoadingIndicator();
+                
+                // Fetch raw data
+                const rawData = await fetchWaterUsageData();
+                
+                if (rawData.length === 0) {
+                    console.warn('No data found, using sample data');
+                    monthlyData = getSampleData();
+                } else {
+                    // Process data into monthly format
+                    monthlyData = processMonthlyData(rawData);
+                    
+                    // If no monthly data after processing, use sample data
+                    if (monthlyData.length === 0) {
+                        console.warn('No monthly data after processing, using sample data');
+                        monthlyData = getSampleData();
+                    }
+                }
+                
+                // Update UI with real data
+                updateSummaryValues();
+                generateMonthlyBreakdown();
+                initializeCharts();
+                
+                // Hide loading indicator
+                hideLoadingIndicator();
+                
+                console.log('Data loaded successfully:', monthlyData);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                
+                // Hide loading indicator and use sample data
+                hideLoadingIndicator();
+                monthlyData = getSampleData();
+                
+                // Update UI with sample data
+                updateSummaryValues();
+                generateMonthlyBreakdown();
+                initializeCharts();
+                
+                // Show error message to user
+                showErrorMessage('Failed to load data from database. Using sample data instead.');
+            }
+        }
+
+        /**
+         * Show error message to user
+         */
+        function showErrorMessage(message) {
+            const errorHTML = `
+                <div id="error-message" style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #f5576c;
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    max-width: 300px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                ">
+                    ${message}
+                    <button onclick="document.getElementById('error-message').remove()" style="
+                        background: none;
+                        border: none;
+                        color: white;
+                        float: right;
+                        cursor: pointer;
+                        font-size: 16px;
+                        margin-left: 10px;
+                    ">&times;</button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', errorHTML);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                const errorMessage = document.getElementById('error-message');
+                if (errorMessage) {
+                    errorMessage.remove();
+                }
+            }, 5000);
+        }
+
+        // ======================
+        // Chart Initialization Functions
+        // ======================
+
+        /**
+         * Initialize charts with real data
+         */
+        function initializeCharts() {
+            // Monthly Usage Trends Chart
+            Highcharts.chart('monthlyUsageChart', {
+                chart: {
+                    type: 'line',
+                    backgroundColor: 'transparent',
+                    style: {
+                        fontFamily: 'Inter, sans-serif'
+                    }
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: monthlyData.map(d => d.month),
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    lineColor: 'rgba(255, 255, 255, 0.2)'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Usage (Liters)',
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    gridLineColor: 'rgba(255, 255, 255, 0.1)'
+                },
+                series: [{
+                    name: 'Total Usage',
+                    data: monthlyData.map(d => d.total),
+                    color: '#667eea',
+                    lineWidth: 3,
+                    marker: {
+                        radius: 6,
+                        fillColor: '#667eea',
+                        lineColor: '#ffffff',
+                        lineWidth: 2
+                    }
+                }],
+                legend: {
+                    itemStyle: {
+                        color: 'rgba(255, 255, 255, 0.8)'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    style: {
+                        color: '#ffffff'
+                    },
+                    formatter: function() {
+                        return '<b>' + this.x + '</b><br>' +
+                            'Total Usage: <b>' + this.y.toLocaleString() + ' L</b>';
+                    }
+                }
+            });
+
+            // Monthly Cost Chart
+            Highcharts.chart('monthlyCostChart', {
+                chart: {
+                    type: 'column',
+                    backgroundColor: 'transparent',
+                    style: {
+                        fontFamily: 'Inter, sans-serif'
+                    }
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: monthlyData.map(d => d.month),
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    lineColor: 'rgba(255, 255, 255, 0.2)'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Cost (Rupiah)',
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        },
+                        formatter: function() {
+                            return 'Rp ' + (this.value / 1000) + 'K';
+                        }
+                    },
+                    gridLineColor: 'rgba(255, 255, 255, 0.1)'
+                },
+                series: [{
+                    name: 'Monthly Cost',
+                    data: monthlyData.map(d => d.cost),
+                    color: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                        stops: [
+                            [0, '#f093fb'],
+                            [1, '#f5576c']
+                        ]
+                    },
+                    borderRadius: 4
+                }],
+                legend: {
+                    itemStyle: {
+                        color: 'rgba(255, 255, 255, 0.8)'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    style: {
+                        color: '#ffffff'
+                    },
+                    formatter: function() {
+                        return '<b>' + this.x + '</b><br>' +
+                            'Cost: <b>Rp ' + this.y.toLocaleString() + '</b>';
+                    }
+                }
+            });
+
+            // Cumulative Device Usage Chart
+            Highcharts.chart('cumulativeChart', {
+                chart: {
+                    type: 'area',
+                    backgroundColor: 'transparent',
+                    style: {
+                        fontFamily: 'Inter, sans-serif'
+                    }
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: monthlyData.map(d => d.month),
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    lineColor: 'rgba(255, 255, 255, 0.2)'
+                },
+                yAxis: {
+                    title: {
+                        text: 'Cumulative Usage (Liters)',
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    labels: {
+                        style: {
+                            color: 'rgba(255, 255, 255, 0.8)'
+                        }
+                    },
+                    gridLineColor: 'rgba(255, 255, 255, 0.1)'
+                },
+                plotOptions: {
+                    area: {
+                        stacking: 'normal',
+                        marker: {
+                            enabled: false
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Toilet',
+                    data: monthlyData.map(d => d.toilet),
+                    color: 'rgba(102, 126, 234, 0.7)'
+                }, {
+                    name: 'Faucet',
+                    data: monthlyData.map(d => d.faucet),
+                    color: 'rgba(240, 147, 251, 0.7)'
+                }, {
+                    name: 'Garden',
+                    data: monthlyData.map(d => d.garden),
+                    color: 'rgba(79, 172, 254, 0.7)'
+                }],
+                legend: {
+                    itemStyle: {
+                        color: 'rgba(255, 255, 255, 0.8)'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    style: {
+                        color: '#ffffff'
+                    },
+                    shared: true,
+                    formatter: function() {
+                        let tooltip = '<b>' + this.x + '</b><br>';
+                        this.points.forEach(point => {
+                            tooltip += point.series.name + ': <b>' + point.y.toLocaleString() + ' L</b><br>';
+                        });
+                        return tooltip;
+                    }
+                }
+            });
+        }
+
+        // ======================
+        // UI Update Functions
+        // ======================
+
+        /**
+         * Generate monthly breakdown cards
+         */
+        function generateMonthlyBreakdown() {
+            const container = document.getElementById('monthlyBreakdown');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            monthlyData.forEach((data, index) => {
+                const changePercent = index > 0 ? 
+                    (((data.total - monthlyData[index-1].total) / monthlyData[index-1].total) * 100).toFixed(1) : 0;
+                const changeIcon = changePercent > 0 ? '↗' : changePercent < 0 ? '↘' : '→';
+                const changeClass = changePercent > 0 ? 'positive' : changePercent < 0 ? 'negative' : '';
+                
+                const card = document.createElement('div');
+                card.className = 'month-card';
+                card.innerHTML = `
+                    <h4>${data.month}</h4>
+                    <div class="month-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Total Usage</span>
+                            <span class="stat-value">${data.total.toLocaleString()} L</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Total Cost</span>
+                            <span class="stat-value cost-highlight">Rp ${data.cost.toLocaleString()}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Toilet</span>
+                            <span class="stat-value">${data.toilet.toLocaleString()} L</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Faucet</span>
+                            <span class="stat-value">${data.faucet.toLocaleString()} L</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Garden</span>
+                            <span class="stat-value">${data.garden.toLocaleString()} L</span>
+                        </div>
+                        ${index > 0 ? `
+                        <div class="stat-row">
+                            <span class="stat-label">vs Previous</span>
+                            <span class="stat-value ${changeClass}">${changeIcon} ${Math.abs(changePercent)}%</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        /**
+         * Update summary values
+         */
+        function updateSummaryValues() {
+            if (monthlyData.length === 0) return;
+            
+            const currentMonth = monthlyData[monthlyData.length - 1];
+            const lastMonth = monthlyData.length > 1 ? monthlyData[monthlyData.length - 2] : currentMonth;
+            const average = monthlyData.reduce((sum, month) => sum + month.total, 0) / monthlyData.length;
+            const avgCost = monthlyData.reduce((sum, month) => sum + month.cost, 0) / monthlyData.length;
+            
+            const changePercent = monthlyData.length > 1 ? 
+                ((currentMonth.total - lastMonth.total) / lastMonth.total * 100).toFixed(0) : 0;
+            
+            // Update current month values
+            const currentMonthUsageEl = document.getElementById('currentMonthUsage');
+            const currentMonthCostEl = document.getElementById('currentMonthCost');
+            const currentTrendEl = document.getElementById('currentTrend');
+            
+            if (currentMonthUsageEl) currentMonthUsageEl.textContent = currentMonth.total.toLocaleString() + ' L';
+            if (currentMonthCostEl) currentMonthCostEl.textContent = 'Rp ' + currentMonth.cost.toLocaleString();
+            if (currentTrendEl) {
+                currentTrendEl.textContent = `${changePercent > 0 ? '↗' : '↘'} ${Math.abs(changePercent)}% vs last month`;
+                currentTrendEl.className = `trend ${changePercent > 0 ? 'positive' : 'negative'}`;
+            }
+            
+            // Update last month values
+            const lastMonthUsageEl = document.getElementById('lastMonthUsage');
+            const lastMonthCostEl = document.getElementById('lastMonthCost');
+            
+            if (lastMonthUsageEl) lastMonthUsageEl.textContent = lastMonth.total.toLocaleString() + ' L';
+            if (lastMonthCostEl) lastMonthCostEl.textContent = 'Rp ' + lastMonth.cost.toLocaleString();
+            
+            // Update average values
+            const averageUsageEl = document.getElementById('averageUsage');
+            const averageCostEl = document.getElementById('averageCost');
+            
+            if (averageUsageEl) averageUsageEl.textContent = Math.round(average).toLocaleString() + ' L';
+            if (averageCostEl) averageCostEl.textContent = 'Rp ' + Math.round(avgCost).toLocaleString();
+        }
+
+        // ======================
+        // Initialize everything when page loads
+        // ======================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load real data from Supabase
+            loadRealData();
+        });
+
+        // Export functions for potential external use
+        window.waterUsageApp = {
+            loadRealData,
+            updateSummaryValues,
+            generateMonthlyBreakdown,
+            initializeCharts
+        };
+    </script>
+</body>
+</html>
