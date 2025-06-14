@@ -1607,14 +1607,7 @@ function checkForAlerts() {
             garden: 200   // L/day
         };
         
-        if (dailyAvg > thresholds[device]) {
-            alerts.push({
-                type: 'high_usage',
-                device: device,
-                message: `High water usage detected in ${device}: ${dailyAvg.toFixed(1)}L/day`,
-                severity: 'warning'
-            });
-        }
+
     });
     
     // Check for unusual patterns (usage during late night hours)
