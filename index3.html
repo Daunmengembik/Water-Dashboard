@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Efficiency & Conservation Dashboard</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, 
+                #667eea 0%, 
+                #764ba2 25%, 
+                #f093fb 50%, 
+                #f5576c 75%, 
+                #4facfe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 20px 40px;
+            position: sticky;
+            top: 0px;
+            z-index: 1000;
+            margin: 0px;
+            overflow: hidden;
+            border-radius: 0px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-logo {
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            font-size: 16px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links li a:hover {
+            color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-links li a.active {
+            color: rgba(255, 255, 255, 1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Efficiency Score Section */
+        .efficiency-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .efficiency-card {
+            padding: 35px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .efficiency-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .efficiency-score {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: conic-gradient(from 0deg, #51cf66 0deg, #51cf66 var(--score-deg), rgba(255, 255, 255, 0.2) var(--score-deg), rgba(255, 255, 255, 0.2) 360deg);
+        }
+
+        .efficiency-score::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .score-text {
+            position: relative;
+            z-index: 1;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .efficiency-label {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+
+        .efficiency-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Chart Section */
+        .chart-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            padding: 30px;
+            border-radius: 20px;
+            min-height: 400px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.12) 0%, 
+                rgba(255, 255, 255, 0.08) 100%);
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .chart-container h3 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .full-width-chart {
+            grid-column: 1 / -1;
+        }
+
+        /* Tips Section */
+        .tips-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .tips-container {
+            padding: 30px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .tips-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .tip-card {
+            padding: 25px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .tip-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .tip-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tip-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .tip-description {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        .tip-savings {
+            font-size: 12px;
+            color: #51cf66;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Trivia Section */
+        .trivia-container {
+            padding: 30px;
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+        }
+
+        .trivia-card {
+            padding: 25px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .trivia-card.active {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+
+        .trivia-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trivia-fact {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .trivia-impact {
+            font-size: 12px;
+            color: #f5576c;
+            font-weight: 600;
+            background: rgba(245, 87, 108, 0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .trivia-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .trivia-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .trivia-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .trivia-counter {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Goals Section */
+        .goals-section {
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .goal-card {
+            padding: 25px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .goal-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .goal-progress {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .goal-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #51cf66 0%, #4facfe 100%);
+            transition: width 0.5s ease;
+        }
+
+        .goal-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .efficiency-card {
+            animation: slideIn 0.6s ease forwards;
+        }
+
+        .efficiency-card:nth-child(1) { animation-delay: 0.1s; }
+        .efficiency-card:nth-child(2) { animation-delay: 0.2s; }
+        .efficiency-card:nth-child(3) { animation-delay: 0.3s; }
+        .efficiency-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @media (max-width: 768px) {
+            .chart-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .tips-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header h1 {
+                font-size: 32px;
+            }
+            
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-logo"><strong>WaterWateran Dashboard</strong></div>
+        <ul class="nav-links">
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#monthly-comparison">Monthly Analysis</a></li>
+            <li><a href="#efficiency-conservation" class="active">Efficiency & Tips</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header glass">
+            <h1>Water Efficiency & Conservation</h1>
+            <p>Discover your water efficiency score, get personalized conservation tips, and learn fascinating water facts to become a water-saving champion!</p>
+        </div>
+
+        <!-- Efficiency Scores -->
+        <div class="efficiency-grid">
+            <div class="efficiency-card glass">
+                <div class="efficiency-score" style="--score-deg: 252deg;">
+                    <div class="score-text">78%</div>
+                </div>
+                <div class="efficiency-label">Overall Efficiency</div>
+                <div class="efficiency-description">Good! You're saving more water than 65% of households</div>
+            </div>
+            <div class="efficiency-card glass">
+                <div class="efficiency-score" style="--score-deg: 288deg;">
+                    <div class="score-text">85%</div>
+                </div>
+                <div class="efficiency-label">Toilet Efficiency</div>
+                <div class="efficiency-description">Excellent! Your toilet usage is highly efficient</div>
+            </div>
+            <div class="efficiency-card glass">
+                <div class="efficiency-score" style="--score-deg: 216deg;">
+                    <div class="score-text">68%</div>
+                </div>
+                <div class="efficiency-label">Faucet Efficiency</div>
+                <div class="efficiency-description">Room for improvement in faucet usage patterns</div>
+            </div>
+            <div class="efficiency-card glass">
+                <div class="efficiency-score" style="--score-deg: 180deg;">
+                    <div class="score-text">58%</div>
+                </div>
+                <div class="efficiency-label">Garden Efficiency</div>
+                <div class="efficiency-description">Consider smart irrigation for better efficiency</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="chart-section">
+            <div class="chart-container glass">
+                <h3>Weekly Efficiency Trends</h3>
+                <div id="efficiencyTrendChart" style="height: 350px;"></div>
+            </div>
+            <div class="chart-container glass">
+                <h3>Device Performance Comparison</h3>
+                <div id="devicePerformanceChart" style="height: 350px;"></div>
+            </div>
+        </div>
+
+        <div class="chart-container glass full-width-chart">
+            <h3>Peak Usage Hours & Optimization Opportunities</h3>
+            <div id="peakUsageChart" style="height: 400px;"></div>
+        </div>
+
+        <!-- Tips and Trivia Section -->
+        <div class="tips-section">
+            <div class="tips-container glass">
+                <h3 style="text-align: center; margin-bottom: 25px; font-size: 24px; color: rgba(255, 255, 255, 0.95);">💡 Personalized Water Saving Tips</h3>
+                <div class="tips-grid" id="tipsGrid">
+                    <!-- Tips will be generated here -->
+                </div>
+            </div>
+            <div class="trivia-container glass">
+                <h3 style="text-align: center; margin-bottom: 25px; font-size: 24px; color: rgba(255, 255, 255, 0.95);">🌊 Water Awareness Trivia</h3>
+                <div id="triviaCard" class="trivia-card active">
+                    <!-- Current trivia will be shown here -->
+                </div>
+                <div class="trivia-nav">
+                    <button class="trivia-button" onclick="previousTrivia()">← Previous</button>
+                    <span class="trivia-counter" id="triviaCounter">1 / 10</span>
+                    <button class="trivia-button" onclick="nextTrivia()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conservation Goals -->
+        <div class="goals-section glass">
+            <h3 style="text-align: center; margin-bottom: 25px; font-size: 24px; color: rgba(255, 255, 255, 0.95);">🎯 Your Conservation Goals</h3>
+            <div class="goals-grid">
+                <div class="goal-card">
+                    <div class="goal-title">Monthly Reduction Target</div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 68%;"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>Progress: 68%</span>
+                        <span>Target: -15%</span>
+                    </div>
+                </div>
+                <div class="goal-card">
+                    <div class="goal-title">Garden Water Optimization</div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 42%;"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>Progress: 42%</span>
+                        <span>Target: -25%</span>
+                    </div>
+                </div>
+                <div class="goal-card">
+                    <div class="goal-title">Cost Savings This Month</div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 85%;"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>Saved: Rp 12,450</span>
+                        <span>Target: Rp 15,000</span>
+                    </div>
+                </div>
+                <div class="goal-card">
+                    <div class="goal-title">Leak Prevention Score</div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar" style="width: 92%;"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>Score: 92%</span>
+                        <span>Target: 95%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// Supabase configuration
+const supabaseUrl = 'https://hslsweymoroniqzjluse.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzbHN3ZXltb3JvbmlxempsdXNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDgzOTQsImV4cCI6MjA2MjI4NDM5NH0.RxN7hDAWpyuUFdHFfSXKgJZhWQJPFWulDTT-496Y-c8'
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
+
+// Device configuration
+let currentDeviceIndex = 0;
+let selectedDevice = 'all';
+let alertCount = 0;
+const devices = ['toilet', 'faucet', 'garden'];
+const colors = {
+    toilet: '#de5d83',   // Red
+    faucet: '#13bbaf',   // Blue
+    garden: '#fff7e7',   // Yellow
+    all: '#4facfe'       // Default blue
+};
+
+// Global data storage
+let flowData = [];
+let processedData = {
+    daily: {},
+    weekly: {},
+    monthly: {},
+    deviceStats: {}
+};
+
+// Water saving tips data (keep static)
+const waterSavingTips = [
+    {
+        icon: "🚿",
+        title: "Shorter Showers",
+        description: "Reduce shower time by 2 minutes to save up to 37 liters per shower.",
+        savings: "Potential savings: Rp 8,500/month"
+    },
+    {
+        icon: "🚰",
+        title: "Fix Leaky Faucets",
+        description: "A dripping faucet can waste over 11,000 liters per year. Fix it now!",
+        savings: "Potential savings: Rp 52,800/year"
+    },
+    {
+        icon: "🌱",
+        title: "Smart Garden Watering",
+        description: "Water your garden early morning or evening to reduce evaporation by 30%.",
+        savings: "Potential savings: Rp 15,200/month"
+    },
+    {
+        icon: "🚽",
+        title: "Dual-Flush Toilet",
+        description: "Use the low-flush option for liquid waste to save 3-5 liters per flush.",
+        savings: "Potential savings: Rp 6,400/month"
+    },
+    {
+        icon: "🍽️",
+        title: "Full Dishwasher Loads",
+        description: "Run dishwasher only when full to save 45 liters per cycle.",
+        savings: "Potential savings: Rp 4,300/month"
+    },
+    {
+        icon: "🏠",
+        title: "Rainwater Harvesting",
+        description: "Collect rainwater for garden irrigation and reduce dependency on tap water.",
+        savings: "Potential savings: Rp 25,000/month"
+    }
+];
+
+// Water trivia data (keep static)
+const waterTrivia = [
+    {
+        title: "💧 The Human Water Connection",
+        fact: "The human body is about 60% water. You lose 2-3 liters of water daily through breathing, sweating, and waste elimination.",
+        impact: "Staying hydrated improves energy and brain function by 20%"
+    },
+    {
+        title: "🌍 Global Water Scarcity",
+        fact: "Only 0.3% of Earth's water is usable by humans. 2.2 billion people lack access to safely managed drinking water.",
+        impact: "Every liter you save contributes to global conservation efforts"
+    },
+    {
+        title: "🚿 Shower vs Bath Facts",
+        fact: "A 10-minute shower uses 95 liters of water, while a full bath uses 300 liters. Switching saves 205 liters!",
+        impact: "Daily shower savings: Rp 984 per month per person"
+    },
+    {
+        title: "🌱 Plants and Water Wisdom",
+        fact: "It takes 2,700 liters of water to make one cotton t-shirt and 15,400 liters to produce 1kg of beef.",
+        impact: "Conscious consumption reduces your water footprint significantly"
+    },
+    {
+        title: "🏠 Household Water Distribution",
+        fact: "Toilets use 24% of household water, laundry 16%, showers 17%, and faucets 19% of total consumption.",
+        impact: "Target highest usage areas for maximum savings impact"
+    },
+    {
+        title: "💧 Leak Detection Magic",
+        fact: "A single drop per second from a leaky faucet wastes over 19 liters per day - that's 7,000 liters annually!",
+        impact: "Monthly leak check can save Rp 33,600 annually"
+    },
+    {
+        title: "🌊 Ocean Water Reality",
+        fact: "97% of Earth's water is saltwater. Desalination requires enormous energy - 3-4 kWh per 1000 liters.",
+        impact: "Freshwater conservation reduces energy consumption globally"
+    },
+    {
+        title: "🚰 Ancient Water Systems",
+        fact: "The first known water pipes were made in the Indus Valley civilization 4,000 years ago using terracotta.",
+        impact: "Modern plumbing saves 90% more water than ancient systems"
+    },
+    {
+        title: "❄️ Ice and Climate Connection",
+        fact: "If all ice on Earth melted, sea levels would rise 70 meters. Ice caps contain 68.7% of world's freshwater.",
+        impact: "Water conservation helps preserve polar ice through reduced energy use"
+    },
+    {
+        title: "🔄 Water Recycling Wonder",
+        fact: "Water is recycled naturally - the same water dinosaurs drank 65 million years ago still exists today!",
+        impact: "Every drop counts in the endless cycle of water conservation"
+    }
+];
+
+let currentTriviaIndex = 0;
+
+// Fetch data from Supabase
+async function fetchFlowData(timeRange = '7 days') {
+    try {
+        showChartLoading('efficiencyTrendChart');
+        showChartLoading('devicePerformanceChart');
+        showChartLoading('peakUsageChart');
+        
+        const { data, error } = await supabaseClient
+            .from('flow_data')
+            .select('*')
+            .gte('timestamp', new Date(Date.now() - (timeRange === '7 days' ? 7 : timeRange === '30 days' ? 30 : 1) * 24 * 60 * 60 * 1000).toISOString())
+            .order('timestamp', { ascending: true });
+
+        if (error) {
+            console.error('Error fetching data:', error);
+            handleDataError();
+            return;
+        }
+
+        flowData = data || [];
+        processFlowData();
+        updateDashboard();
+        
+    } catch (error) {
+        console.error('Error in fetchFlowData:', error);
+        handleDataError();
+    }
+}
+
+// Process raw flow data into usable formats
+function processFlowData() {
+    processedData = {
+        daily: {},
+        weekly: {},
+        monthly: {},
+        deviceStats: {},
+        hourlyUsage: {},
+        weeklyTrends: {}
+    };
+
+    // Group data by device and time periods
+    flowData.forEach(record => {
+        const date = new Date(record.timestamp);
+        const device = record.device_name;
+        const dateKey = date.toISOString().split('T')[0];
+        const hour = date.getHours();
+        const weekKey = getWeekKey(date);
+        
+        // Initialize if doesn't exist
+        if (!processedData.daily[dateKey]) processedData.daily[dateKey] = {};
+        if (!processedData.daily[dateKey][device]) processedData.daily[dateKey][device] = { total: 0, records: 0 };
+        if (!processedData.deviceStats[device]) processedData.deviceStats[device] = { total: 0, avgFlow: 0, records: 0 };
+        if (!processedData.hourlyUsage[hour]) processedData.hourlyUsage[hour] = {};
+        if (!processedData.hourlyUsage[hour][device]) processedData.hourlyUsage[hour][device] = 0;
+        if (!processedData.weeklyTrends[weekKey]) processedData.weeklyTrends[weekKey] = {};
+        if (!processedData.weeklyTrends[weekKey][device]) processedData.weeklyTrends[weekKey][device] = 0;
+        
+        // Accumulate data
+        processedData.daily[dateKey][device].total += record.total_consumed;
+        processedData.daily[dateKey][device].records += 1;
+        
+        processedData.deviceStats[device].total += record.total_consumed;
+        processedData.deviceStats[device].records += 1;
+        
+        processedData.hourlyUsage[hour][device] += record.total_consumed;
+        processedData.weeklyTrends[weekKey][device] += record.total_consumed;
+    });
+    
+    // Calculate averages
+    Object.keys(processedData.deviceStats).forEach(device => {
+        const stats = processedData.deviceStats[device];
+        stats.avgFlow = stats.total / stats.records;
+    });
+}
+
+// Get week key for grouping
+function getWeekKey(date) {
+    const week = Math.ceil(date.getDate() / 7);
+    return `Week ${week}`;
+}
+
+// Update dashboard with real data
+function updateDashboard() {
+    updateEfficiencyCards();
+    createEfficiencyTrendChart();
+    createDevicePerformanceChart();
+    createPeakUsageChart();
+}
+
+// Update efficiency cards with real data
+function updateEfficiencyCards() {
+    const totalConsumption = Object.values(processedData.deviceStats).reduce((sum, device) => sum + device.total, 0);
+    
+    // Update total consumption
+    const totalCard = document.querySelector('.efficiency-card .efficiency-value');
+    if (totalCard) {
+        totalCard.textContent = `${totalConsumption.toFixed(1)}L`;
+    }
+    
+    // Update device-specific metrics
+    const efficiencyCards = document.querySelectorAll('.efficiency-card');
+    efficiencyCards.forEach((card, index) => {
+        const value = card.querySelector('.efficiency-value');
+        const label = card.querySelector('.efficiency-label');
+        
+        switch(index) {
+            case 0:
+                value.textContent = `${totalConsumption.toFixed(1)}L`;
+                label.textContent = 'Total Consumption';
+                break;
+            case 1:
+                const avgDaily = totalConsumption / 7;
+                value.textContent = `${avgDaily.toFixed(1)}L`;
+                label.textContent = 'Daily Average';
+                break;
+            case 2:
+                const efficiency = calculateEfficiencyScore();
+                value.textContent = `${efficiency}%`;
+                label.textContent = 'Efficiency Score';
+                break;
+            case 3:
+                const monthlySavings = calculateMonthlySavings();
+                value.textContent = formatCurrency(monthlySavings);
+                label.textContent = 'Monthly Savings';
+                break;
+        }
+    });
+}
+
+// Calculate efficiency score based on usage patterns
+function calculateEfficiencyScore() {
+    const totalUsage = Object.values(processedData.deviceStats).reduce((sum, device) => sum + device.total, 0);
+    const optimalUsage = 2000; // Optimal weekly usage in liters
+    const efficiency = Math.max(0, Math.min(100, (1 - (totalUsage - optimalUsage) / optimalUsage) * 100));
+    return Math.round(efficiency);
+}
+
+// Calculate monthly savings
+function calculateMonthlySavings() {
+    const currentUsage = Object.values(processedData.deviceStats).reduce((sum, device) => sum + device.total, 0);
+    const optimalUsage = 2000;
+    const costPerLiter = 4.8;
+    const weeklySavings = Math.max(0, (currentUsage - optimalUsage) * costPerLiter);
+    return weeklySavings * 4; // Monthly savings
+}
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    generateTips();
+    displayCurrentTrivia();
+    fetchFlowData(); // Fetch real data instead of dummy data
+    
+    // Refresh data every 5 minutes
+    setInterval(() => {
+        fetchFlowData();
+    }, 5 * 60 * 1000);
+});
+
+// Generate tips (keep unchanged)
+function generateTips() {
+    const tipsGrid = document.getElementById('tipsGrid');
+    tipsGrid.innerHTML = '';
+    
+    waterSavingTips.forEach(tip => {
+        const tipCard = document.createElement('div');
+        tipCard.className = 'tip-card';
+        tipCard.innerHTML = `
+            <div class="tip-icon">${tip.icon}</div>
+            <div class="tip-title">${tip.title}</div>
+            <div class="tip-description">${tip.description}</div>
+            <div class="tip-savings">${tip.savings}</div>
+        `;
+        tipsGrid.appendChild(tipCard);
+    });
+}
+
+// Display current trivia (keep unchanged)
+function displayCurrentTrivia() {
+    const triviaCard = document.getElementById('triviaCard');
+    const triviaCounter = document.getElementById('triviaCounter');
+    const currentTrivia = waterTrivia[currentTriviaIndex];
+    
+    triviaCard.innerHTML = `
+        <div class="trivia-title">${currentTrivia.title}</div>
+        <div class="trivia-fact">${currentTrivia.fact}</div>
+        <div class="trivia-impact">${currentTrivia.impact}</div>
+    `;
+    
+    triviaCounter.textContent = `${currentTriviaIndex + 1} / ${waterTrivia.length}`;    
+}
+
+// Navigate trivia (keep unchanged)
+function nextTrivia() {
+    currentTriviaIndex = (currentTriviaIndex + 1) % waterTrivia.length;
+    displayCurrentTrivia();
+}
+
+function previousTrivia() {
+    currentTriviaIndex = (currentTriviaIndex - 1 + waterTrivia.length) % waterTrivia.length;
+    displayCurrentTrivia();
+}
+
+// Weekly Efficiency Trends Chart with real data
+function createEfficiencyTrendChart() {
+    const weeklyData = processedData.weeklyTrends;
+    const weeks = Object.keys(weeklyData);
+    
+    // Calculate efficiency for each week
+    const efficiencyData = weeks.map(week => {
+        const weekTotal = Object.values(weeklyData[week]).reduce((sum, val) => sum + val, 0);
+        const optimalWeekly = 500; // Optimal weekly usage
+        return Math.max(0, Math.min(100, (1 - (weekTotal - optimalWeekly) / optimalWeekly) * 100));
+    });
+    
+    const optimizationData = weeks.map(week => {
+        const weekTotal = Object.values(weeklyData[week]).reduce((sum, val) => sum + val, 0);
+        const targetUsage = 450;
+        return Math.max(0, Math.min(100, (1 - (weekTotal - targetUsage) / targetUsage) * 100));
+    });
+
+    Highcharts.chart('efficiencyTrendChart', {
+        chart: {
+            type: 'spline',
+            backgroundColor: 'transparent',
+            style: {
+                fontFamily: 'Inter, sans-serif'
+            }
+        },
+        title: {
+            text: '',
+            style: {
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '18px'
+            }
+        },
+        xAxis: {
+            categories: weeks.length > 0 ? weeks : ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            gridLineColor: 'rgba(255, 255, 255, 0.1)',
+            lineColor: 'rgba(255, 255, 255, 0.2)'
+        },
+        yAxis: {
+            title: {
+                text: 'Efficiency %',
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            gridLineColor: 'rgba(255, 255, 255, 0.1)',
+            lineColor: 'rgba(255, 255, 255, 0.2)',
+            min: 0,
+            max: 100
+        },
+        legend: {
+            itemStyle: {
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '12px'
+            }
+        },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            style: {
+                color: 'white'
+            },
+            formatter: function() {
+                return `<b>${this.series.name}</b><br/>
+                        ${this.x}: ${this.y.toFixed(1)}%<br/>
+                        <small>Trend: ${this.y > 75 ? 'Excellent' : this.y > 60 ? 'Good' : 'Needs Improvement'}</small>`;
+            }
+        },
+        plotOptions: {
+            spline: {
+                marker: {
+                    radius: 6,
+                    symbol: 'circle'
+                },
+                lineWidth: 3
+            }
+        },
+        series: [{
+            name: 'Overall Efficiency',
+            data: efficiencyData.length > 0 ? efficiencyData : [72, 78, 81, 78],
+            color: '#51cf66',
+            marker: {
+                fillColor: '#51cf66'
+            }
+        }, {
+            name: 'Water Usage Optimization',
+            data: optimizationData.length > 0 ? optimizationData : [68, 74, 79, 82],
+            color: '#4facfe',
+            marker: {
+                fillColor: '#4facfe'
+            }
+        }, {
+            name: 'Conservation Target',
+            data: [65, 70, 75, 80],
+            color: '#f5576c',
+            dashStyle: 'dash',
+            marker: {
+                fillColor: '#f5576c'
+            }
+        }],
+        credits: {
+            enabled: false
+        }
+    });
+}
+
+// Device Performance Comparison Chart with real data
+function createDevicePerformanceChart() {
+    const deviceNames = ['toilet', 'faucet', 'garden'];
+    const performanceData = deviceNames.map(device => {
+        const deviceData = processedData.deviceStats[device];
+        if (!deviceData) return { y: 0, color: '#f5576c' };
+        
+        // Calculate performance score based on usage efficiency
+        const avgUsage = deviceData.total / 7; // Daily average
+        const optimalUsage = getOptimalUsage(device);
+        const performance = Math.max(0, Math.min(100, (1 - Math.abs(avgUsage - optimalUsage) / optimalUsage) * 100));
+        
+        return {
+            y: Math.round(performance),
+            color: performance > 80 ? '#51cf66' : performance > 65 ? '#4facfe' : performance > 50 ? '#ffd43b' : '#f5576c'
+        };
+    });
+
+    const targetData = deviceNames.map(device => getTargetPerformance(device));
+
+    Highcharts.chart('devicePerformanceChart', {
+        chart: {
+            type: 'column',
+            backgroundColor: 'transparent',
+            style: {
+                fontFamily: 'Inter, sans-serif'
+            }
+        },
+        title: {
+            text: '',
+            style: {
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '18px'
+            }
+        },
+        xAxis: {
+            categories: ['Toilet', 'Faucet', 'Garden'],
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '11px'
+                }
+            },
+            gridLineColor: 'rgba(255, 255, 255, 0.1)',
+            lineColor: 'rgba(255, 255, 255, 0.2)'
+        },
+        yAxis: {
+            title: {
+                text: 'Efficiency Score',
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            gridLineColor: 'rgba(255, 255, 255, 0.1)',
+            lineColor: 'rgba(255, 255, 255, 0.2)',
+            min: 0,
+            max: 100
+        },
+        legend: {
+            itemStyle: {
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '12px'
+            }
+        },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            style: {
+                color: 'white'
+            },
+            formatter: function() {
+                const status = this.y > 80 ? 'Excellent' : this.y > 65 ? 'Good' : this.y > 50 ? 'Fair' : 'Poor';
+                const recommendation = this.y < 70 ? '<br/><small>💡 Check for optimization tips</small>' : '';
+                return `<b>${this.x}</b><br/>
+                        Efficiency: ${this.y}%<br/>
+                        Status: ${status}${recommendation}`;
+            }
+        },
+        plotOptions: {
+            column: {
+                borderRadius: 8,
+                borderWidth: 0,
+                pointPadding: 0.1,
+                groupPadding: 0.15
+            }
+        },
+        series: [{
+            name: 'Current Performance',
+            data: performanceData
+        }, {
+            name: 'Target Performance',
+            data: targetData,
+            color: 'rgba(255, 255, 255, 0.3)',
+            borderColor: 'rgba(255, 255, 255, 0.5)',
+            borderWidth: 2,
+            fillOpacity: 0
+        }],
+        credits: {
+            enabled: false
+        }
+    });
+}
+
+// Get optimal usage for device
+function getOptimalUsage(device) {
+    const optimal = {
+        toilet: 50,   // liters per day
+        faucet: 80,   // liters per day
+        garden: 120   // liters per day
+    };
+    return optimal[device] || 50;
+}
+
+// Get target performance for device
+function getTargetPerformance(device) {
+    const targets = {
+        toilet: 90,
+        faucet: 85,
+        garden: 75
+    };
+    return targets[device] || 80;
+}
+
+// Peak Usage Hours & Optimization Chart with real data
+function createPeakUsageChart() {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const timeSlots = ['00-04', '04-08', '08-12', '12-16', '16-20', '20-24'];
+    
+    // Process hourly usage data
+    const heatmapData = [];
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        for (let timeIndex = 0; timeIndex < 6; timeIndex++) {
+            const startHour = timeIndex * 4;
+            let totalUsage = 0;
+            
+            // Sum usage for this time period across all devices
+            for (let hour = startHour; hour < startHour + 4; hour++) {
+                if (processedData.hourlyUsage[hour]) {
+                    totalUsage += Object.values(processedData.hourlyUsage[hour]).reduce((sum, val) => sum + val, 0);
+                }
+            }
+            
+            // Normalize to percentage (0-100)
+            const maxUsage = 200; // Assume max usage threshold
+            const percentage = Math.min(100, (totalUsage / maxUsage) * 100);
+            
+            heatmapData.push([dayIndex, timeIndex, Math.round(percentage)]);
+        }
+    }
+
+    // Use dummy data if no real data available
+    const finalData = heatmapData.length > 0 && heatmapData.some(item => item[2] > 0) ? heatmapData : [
+        [0, 0, 15], [0, 1, 35], [0, 2, 65], [0, 3, 45], [0, 4, 85], [0, 5, 25],
+        [1, 0, 12], [1, 1, 38], [1, 2, 70], [1, 3, 42], [1, 4, 88], [1, 5, 28],
+        [2, 0, 18], [2, 1, 42], [2, 2, 68], [2, 3, 48], [2, 4, 82], [2, 5, 22],
+        [3, 0, 14], [3, 1, 36], [3, 2, 72], [3, 3, 46], [3, 4, 86], [3, 5, 26],
+        [4, 0, 16], [4, 1, 40], [4, 2, 75], [4, 3, 50], [4, 4, 90], [4, 5, 30],
+        [5, 0, 20], [5, 1, 25], [5, 2, 55], [5, 3, 60], [5, 4, 78], [5, 5, 45],
+        [6, 0, 22], [6, 1, 28], [6, 2, 52], [6, 3, 58], [6, 4, 75], [6, 5, 48]
+    ];
+
+    Highcharts.chart('peakUsageChart', {
+        chart: {
+            type: 'heatmap',
+            backgroundColor: 'transparent',
+            style: {
+                fontFamily: 'Inter, sans-serif'
+            }
+        },
+        title: {
+            text: '',
+            style: {
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '18px'
+            }
+        },
+        xAxis: {
+            categories: days,
+            title: {
+                text: 'Days of Week',
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '11px'
+                }
+            }
+        },
+        yAxis: {
+            categories: timeSlots,
+            title: {
+                text: 'Time Periods',
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '12px'
+                }
+            },
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '11px'
+                }
+            },
+            reversed: true
+        },
+        colorAxis: {
+            min: 0,
+            max: 100,
+            stops: [
+                [0, '#4facfe'],
+                [0.3, '#51cf66'],
+                [0.6, '#ffd43b'],
+                [0.9, '#f5576c']
+            ],
+            labels: {
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '10px'
+                }
+            }
+        },
+        legend: {
+            itemStyle: {
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '11px'
+            },
+            title: {
+                text: 'Usage Intensity',
+                style: {
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    fontSize: '11px'
+                }
+            }
+        },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            style: {
+                color: 'white'
+            },
+            formatter: function() {
+                const intensity = this.point.value > 75 ? 'Very High' : this.point.value > 50 ? 'High' : this.point.value > 25 ? 'Medium' : 'Low';
+                const optimization = this.point.value > 75 ? '<br/>💡 Consider shifting usage to off-peak hours' : '';
+                return `<b>${this.series.xAxis.categories[this.point.x]} ${this.series.yAxis.categories[this.point.y]}</b><br/>
+                        Usage: ${this.point.value}%<br/>
+                        Intensity: ${intensity}${optimization}`;
+            }
+        },
+        series: [{
+            name: 'Water Usage Pattern',
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            data: finalData,
+            dataLabels: {
+                enabled: false
+            }
+        }],
+        credits: {
+            enabled: false
+        },
+        subtitle: {
+            text: 'Darker colors indicate higher water usage. Data updated from your real consumption patterns.',
+            style: {
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '11px'
+            }
+        }
+    });
+}
+
+// Continuation of the incomplete JavaScript code
+
+// Complete the handleDataError function that was cut off
+function handleDataError() {
+    console.error('Failed to load data from Supabase');
+    
+    // Show error message to user
+    const errorMessage = document.createElement('div');
+    errorMessage.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(245, 87, 108, 0.9);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    errorMessage.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>⚠️</span>
+            <span>Unable to load data. Using cached data.</span>
+            <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; margin-left: 8px;">×</button>
+        </div>
+    `;
+    
+    document.body.appendChild(errorMessage);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (errorMessage.parentElement) {
+            errorMessage.remove();
+        }
+    }, 5000);
+    
+    // Use fallback dummy data
+    generateFallbackData();
+    updateDashboard();
+}
+
+// Generate fallback data when Supabase is unavailable
+function generateFallbackData() {
+    const now = new Date();
+    flowData = [];
+    
+    // Generate 7 days of sample data
+    for (let day = 6; day >= 0; day--) {
+        const date = new Date(now.getTime() - day * 24 * 60 * 60 * 1000);
+        
+        devices.forEach(device => {
+            // Generate multiple readings per day for each device
+            for (let hour = 6; hour < 23; hour += 2) {
+                const timestamp = new Date(date);
+                timestamp.setHours(hour, Math.floor(Math.random() * 60));
+                
+                let baseFlow, baseConsumption;
+                
+                // Set realistic values per device
+                switch(device) {
+                    case 'toilet':
+                        baseFlow = 8 + Math.random() * 4; // 8-12 L/min
+                        baseConsumption = 15 + Math.random() * 10; // 15-25 L per use
+                        break;
+                    case 'faucet':
+                        baseFlow = 6 + Math.random() * 6; // 6-12 L/min
+                        baseConsumption = 20 + Math.random() * 30; // 20-50 L per session
+                        break;
+                    case 'garden':
+                        baseFlow = 12 + Math.random() * 8; // 12-20 L/min
+                        baseConsumption = 50 + Math.random() * 100; // 50-150 L per session
+                        break;
+                }
+                
+                // Add some variation based on time of day
+                const timeMultiplier = hour >= 17 && hour <= 21 ? 1.3 : // Peak evening hours
+                                    hour >= 6 && hour <= 9 ? 1.2 : // Morning hours
+                                    hour >= 12 && hour <= 14 ? 1.1 : 1.0; // Lunch hours
+                
+                flowData.push({
+                    device_name: device,
+                    timestamp: timestamp.toISOString(),
+                    flow_rate: (baseFlow * timeMultiplier).toFixed(2),
+                    total_consumed: (baseConsumption * timeMultiplier).toFixed(2)
+                });
+            }
+        });
+    }
+    
+    // Process the fallback data
+    processFlowData();
+}
+
+// Add loading states for charts
+function showChartLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; height: 300px; color: rgba(255,255,255,0.6);">
+                <div style="text-align: center;">
+                    <div class="loading-spinner"></div>
+                    <div style="margin-top: 10px;">Loading chart data...</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Add CSS for loading spinner
+const style = document.createElement('style');
+style.textContent = `
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-top: 3px solid #4facfe;
+        border-radius: 50%;
+        margin: 0 auto;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+
+// Format currency utility function
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0
+    }).format(amount);
+}
+
+// Device filter functionality
+function filterByDevice(device) {
+    selectedDevice = device;
+    
+    // Update active button
+    document.querySelectorAll('.device-filter').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[onclick="filterByDevice('${device}')"]`).classList.add('active');
+    
+    // Refresh charts with filtered data
+    updateDashboard();
+}
+
+// Time range filter functionality
+function filterByTimeRange(range) {
+    fetchFlowData(range);
+    
+    // Update active button
+    document.querySelectorAll('.time-filter').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[onclick="filterByTimeRange('${range}')"]`).classList.add('active');
+}
+
+// Export data functionality
+function exportData(format = 'csv') {
+    if (flowData.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    let content, filename, mimeType;
+    
+    if (format === 'csv') {
+        // Create CSV content
+        const headers = ['Device Name', 'Timestamp', 'Flow Rate (L/min)', 'Total Consumed (L)'];
+        const csvContent = [
+            headers.join(','),
+            ...flowData.map(row => [
+                row.device_name,
+                row.timestamp,
+                row.flow_rate,
+                row.total_consumed
+            ].join(','))
+        ].join('\n');
+        
+        content = csvContent;
+        filename = `water_usage_data_${new Date().toISOString().split('T')[0]}.csv`;
+        mimeType = 'text/csv';
+    } else if (format === 'json') {
+        content = JSON.stringify(flowData, null, 2);
+        filename = `water_usage_data_${new Date().toISOString().split('T')[0]}.json`;
+        mimeType = 'application/json';
+    }
+    
+    // Create and trigger download
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// Refresh data manually
+function refreshData() {
+    const refreshBtn = document.querySelector('.refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.style.animation = 'spin 1s linear infinite';
+        refreshBtn.disabled = true;
+    }
+    
+    fetchFlowData().finally(() => {
+        if (refreshBtn) {
+            refreshBtn.style.animation = '';
+            refreshBtn.disabled = false;
+        }
+    });
+}
+
+// Alert system for unusual usage
+function checkForAlerts() {
+    const alerts = [];
+    const currentHour = new Date().getHours();
+    
+    // Check for high usage
+    Object.keys(processedData.deviceStats).forEach(device => {
+        const stats = processedData.deviceStats[device];
+        const dailyAvg = stats.total / 7;
+        
+        // Define thresholds per device
+        const thresholds = {
+            toilet: 80,   // L/day
+            faucet: 120,  // L/day
+            garden: 200   // L/day
+        };
+        
+        if (dailyAvg > thresholds[device]) {
+            alerts.push({
+                type: 'high_usage',
+                device: device,
+                message: `High water usage detected in ${device}: ${dailyAvg.toFixed(1)}L/day`,
+                severity: 'warning'
+            });
+        }
+    });
+    
+    // Check for unusual patterns (usage during late night hours)
+    const lateNightUsage = processedData.hourlyUsage[23] || {};
+    Object.keys(lateNightUsage).forEach(device => {
+        if (lateNightUsage[device] > 10) {
+            alerts.push({
+                type: 'unusual_pattern',
+                device: device,
+                message: `Unusual late-night usage detected in ${device}`,
+                severity: 'info'
+            });
+        }
+    });
+    
+    // Display alerts
+    displayAlerts(alerts);
+    return alerts;
+}
+
+// Display alerts to user
+function displayAlerts(alerts) {
+    const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+    alertContainer.innerHTML = '';
+    
+
+    
+    alerts.forEach(alert => {
+        const alertElement = document.createElement('div');
+        alertElement.className = `alert alert-${alert.severity}`;
+        
+        const icon = alert.severity === 'warning' ? '⚠️' : 
+                    alert.severity === 'error' ? '❌' : 'ℹ️';
+        
+        alertElement.innerHTML = `
+            <span>${icon}</span>
+            <span>${alert.message}</span>
+            <button onclick="this.parentElement.remove()" class="alert-close">×</button>
+        `;
+        
+        alertContainer.appendChild(alertElement);
+    });
+    
+    alertCount = alerts.length;
+}
+
+// Create alert container if it doesn't exist
+function createAlertContainer() {
+    const container = document.createElement('div');
+    container.id = 'alertContainer';
+    container.className = 'alert-container';
+    
+    // Insert after header or at top of main content
+    const header = document.querySelector('header') || document.querySelector('.header');
+    if (header) {
+        header.insertAdjacentElement('afterend', container);
+    } else {
+        document.body.insertBefore(container, document.body.firstChild);
+    }
+    
+    return container;
+}
+
+// Enhanced error handling for chart creation
+function handleChartError(containerId, error) {
+    console.error(`Chart error for ${containerId}:`, error);
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; height: 300px; color: rgba(255,255,255,0.6);">
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                    <div>Chart temporarily unavailable</div>
+                    <small style="color: rgba(255,255,255,0.4);">
+                        <button onclick="refreshData()" style="background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-top: 8px;">
+                            Retry
+                        </button>
+                    </small>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Add periodic data refresh and alert checking
+function startPeriodicUpdates() {
+    // Refresh data every 5 minutes
+    setInterval(() => {
+        fetchFlowData();
+    }, 5 * 60 * 1000);
+    
+    // Check for alerts every 2 minutes
+    setInterval(() => {
+        if (flowData.length > 0) {
+            checkForAlerts();
+        }
+    }, 2 * 60 * 1000);
+    
+    // Update timestamp every 30 seconds
+    setInterval(() => {
+        const timestampElement = document.querySelector('.last-updated');
+        if (timestampElement) {
+            timestampElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+        }
+    }, 30 * 1000);
+}
+
+// Enhanced initialization
+document.addEventListener('DOMContentLoaded', function() {
+    generateTips();
+    displayCurrentTrivia();
+    fetchFlowData(); // Fetch real data from Supabase
+    
+    // Start periodic updates
+    startPeriodicUpdates();
+    
+    // Add event listeners for interactive features
+    addInteractiveFeatures();
+    
+    // Initial alert check after data loads
+    setTimeout(() => {
+        if (flowData.length > 0) {
+            checkForAlerts();
+        }
+    }, 2000);
+});
+
+// Add interactive features
+function addInteractiveFeatures() {
+    // Animate efficiency cards on load
+    setTimeout(() => {
+        const efficiencyCards = document.querySelectorAll('.efficiency-card');
+        efficiencyCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 50);
+            }, index * 200);
+        });
+    }, 500);
+
+    // Add hover effects to tip cards
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.classList && node.classList.contains('tip-card')) {
+                    addTipCardHoverEffect(node);
+                }
+            });
+        });
+    });
+    
+    // Observe the tips grid for new tip cards
+    const tipsGrid = document.getElementById('tipsGrid');
+    if (tipsGrid) {
+        observer.observe(tipsGrid, { childList: true });
+    }
+    
+    // Add existing tip cards hover effects
+    document.querySelectorAll('.tip-card').forEach(addTipCardHoverEffect);
+    
+    // Auto-rotate trivia every 15 seconds
+    setInterval(() => {
+        nextTrivia();
+    }, 15000);
+}
+
+// Add hover effect to tip card
+function addTipCardHoverEffect(card) {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px) scale(1.02)';
+        this.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.25)';
+        this.style.transition = 'all 0.3s ease';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+        this.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+    });
+}
+
+// Device cycling functionality
+function cycleDevice() {
+    currentDeviceIndex = (currentDeviceIndex + 1) % devices.length;
+    const newDevice = devices[currentDeviceIndex];
+    filterByDevice(newDevice);
+}
+
+// Add keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Only if no input is focused
+    if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        switch(e.key) {
+            case 'r':
+            case 'R':
+                e.preventDefault();
+                refreshData();
+                break;
+            case 'n':
+            case 'N':
+                e.preventDefault();
+                nextTrivia();
+                break;
+            case 'p':
+            case 'P':
+                e.preventDefault();
+                previousTrivia();
+                break;
+            case ' ':
+                e.preventDefault();
+                cycleDevice();
+                break;
+        }
+    }
+});
+
+// Add visual feedback for user interactions
+function showSuccessMessage(message) {
+    const successDiv = document.createElement('div');
+    successDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(81, 207, 102, 0.9);
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    successDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>✅</span>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(successDiv);
+    
+    setTimeout(() => {
+        successDiv.remove();
+    }, 3000);
+}
+
+        // Console logging for debugging
+        console.log('Water Management Dashboard initialized');
+        console.log('Available devices:', devices);
+        console.log('Supabase URL:', supabaseUrl);
+
+        // Export functions for global access
+        window.waterDashboard = {
+            refreshData,
+            exportData,
+            filterByDevice,
+            filterByTimeRange,
+            nextTrivia,
+            previousTrivia,
+            cycleDevice
+        };
+    </script>
+    </body>
+</html>
