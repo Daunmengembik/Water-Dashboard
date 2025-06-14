@@ -868,6 +868,8 @@ function updateEfficiencyCards() {
         const value = card.querySelector('.efficiency-value');
         const label = card.querySelector('.efficiency-label');
         
+        if (!value || !label) return; // Skip if elements don't exist
+        
         switch(index) {
             case 0:
                 value.textContent = `${Number(totalConsumption || 0).toFixed(1)}L`;
