@@ -511,7 +511,7 @@
         <div class="nav-logo"><strong>WaterWateran Dashboard</strong></div>
         <ul class="nav-links">
             <li><a href="index.html">Dashboard</a></li>
-            <li><a href="index2.hmtl">Monthly Analysis</a></li>
+            <li><a href="index2.html">Monthly Analysis</a></li>
             <li><a href="#efficiency-conservation" class="active">Efficiency & Tips</a></li>
         </ul>
     </nav>
@@ -857,7 +857,7 @@ function updateEfficiencyCards() {
     const totalConsumption = Number(Object.values(processedData.deviceStats).reduce((sum, device) => sum + (device.total || 0), 0)) || 0;
     
     // Update total consumption
-    const totalCard = document.querySelector('.efficiency-card .efficiency-value');
+    const totalCard = document.querySelector('.efficiency-card .score-text');
     if (totalCard) {
         totalCard.textContent = `${totalConsumption.toFixed(1)}L`;
     }
@@ -865,7 +865,7 @@ function updateEfficiencyCards() {
     // Update device-specific metrics
     const efficiencyCards = document.querySelectorAll('.efficiency-card');
     efficiencyCards.forEach((card, index) => {
-        const value = card.querySelector('.efficiency-value');
+        const value = card.querySelector('.score-text');
         const label = card.querySelector('.efficiency-label');
         
         if (!value || !label) return; // Skip if elements don't exist
