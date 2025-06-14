@@ -854,7 +854,7 @@ function updateDashboard() {
 
 // Update efficiency cards with real data
 function updateEfficiencyCards() {
-    const totalConsumption = Object.values(processedData.deviceStats).reduce((sum, device) => sum + (device.total || 0), 0) || 0;
+    const totalConsumption = Number(Object.values(processedData.deviceStats).reduce((sum, device) => sum + (device.total || 0), 0)) || 0;
     
     // Update total consumption
     const totalCard = document.querySelector('.efficiency-card .efficiency-value');
@@ -870,12 +870,12 @@ function updateEfficiencyCards() {
         
         switch(index) {
             case 0:
-                value.textContent = `${(totalConsumption || 0).toFixed(1)}L`;
+                value.textContent = `${Number(totalConsumption || 0).toFixed(1)}L`;
                 label.textContent = 'Total Consumption';
                 break;
             case 1:
-                const avgDaily = (totalConsumption || 0) / 7;
-                value.textContent = `${avgDaily.toFixed(1)}L`;
+                const avgDaily = Number(totalConsumption || 0) / 7;
+                value.textContent = `${Number(avgDaily).toFixed(1)}L`;
                 label.textContent = 'Daily Average';
                 break;
             case 2:
