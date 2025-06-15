@@ -1191,95 +1191,63 @@
             });
         }
 
-        // ======================
-        // Fixed Chart Updates
-        // ======================
-        function updateCharts() {
-            // Update chart title with current time range
-            flowChart.setTitle({
-                text: `Real-time Flow Rate (${timeRanges[selectedTimeRange].label})`
-            });
+async function updateCharts() {
+    // Get fresh data from Supabase for ALL charts
+    const chartData = await getDataFromSupabase(selectedTimeRange);
+    
+    // Process chart data
+    let chartDevicesData = { toilet: [], faucet: [], garden: [] };
+    let dailyTotals = { toilet: 0, faucet: 0, garden: 0 };
+    
+    if (chartData && chartData.length > 0) {
+        chartData.forEach(record => {
+            const timestamp = new Date(record.timestamp).getTime();
+            const deviceName = record.device_name;
+            const flowRate = record.flow_rate;
+            const totalConsumed = record.total_consumed;
             
-            // Ensure data is in correct format for Highcharts
-            // Data should be array of [timestamp, value] pairs
-            const toiletData = (devicesData.toilet?.flow || []).map(point => {
-                // Ensure each point is [timestamp, value]
-                if (Array.isArray(point) && point.length >= 2) {
-                    return [Number(point[0]), Number(point[1])];
-                }
-                return [Date.now(), 0];
-            });
-            
-            const faucetData = (devicesData.faucet?.flow || []).map(point => {
-                if (Array.isArray(point) && point.length >= 2) {
-                    return [Number(point[0]), Number(point[1])];
-                }
-                return [Date.now(), 0];
-            });
-            
-            const gardenData = (devicesData.garden?.flow || []).map(point => {
-                if (Array.isArray(point) && point.length >= 2) {
-                    return [Number(point[0]), Number(point[1])];
-                }
-                return [Date.now(), 0];
-            });
-            
-            // Update flow chart with properly formatted data
-            try {
-                flowChart.series[0].setData(toiletData, false, false);
-                flowChart.series[1].setData(faucetData, false, false);
-                flowChart.series[2].setData(gardenData, true, false);
-            } catch (e) {
-                console.error('Error updating flow chart:', e);
-                console.log('Data formats:', { toiletData, faucetData, gardenData });
+            if (devices.includes(deviceName)) {
+                chartDevicesData[deviceName].push([timestamp, flowRate]);
+                dailyTotals[deviceName] = Math.max(dailyTotals[deviceName], totalConsumed);
             }
+        });
+    }
+    
+    // Update chart title
+    flowChart.setTitle({
+        text: `Real-time Flow Rate (${timeRanges[selectedTimeRange].label})`
+    });
+    
+    // Update flow chart (line chart)
+    flowChart.series[0].setData(chartDevicesData.toilet, false, false);
+    flowChart.series[1].setData(chartDevicesData.faucet, false, false);
+    flowChart.series[2].setData(chartDevicesData.garden, true, false);
+    
+    const showMarkers = selectedTimeRange <= 300;
+    flowChart.series.forEach(series => {
+        series.update({
+            marker: { enabled: showMarkers, radius: 2 }
+        }, false);
+    });
+    
+    flowChart.redraw();
 
-            // Update markers visibility based on time range
-            const showMarkers = selectedTimeRange <= 300;
-            flowChart.series.forEach(series => {
-                series.update({
-                    marker: {
-                        enabled: showMarkers,
-                        radius: 2
-                    }
-                }, false);
-            });
-            
-            flowChart.redraw();
-
-            // Update device distribution chart - ensure proper data format
-            const pieData = devices.map((device, index) => {
-                const value = devicesData[device]?.daily || 0;
-                return {
-                    name: device.charAt(0).toUpperCase() + device.slice(1),
-                    y: Number(value), // Ensure it's a number
-                    color: [colors.toilet, colors.faucet, colors.garden][index]
-                };
-            });
-            
-            try {
-                deviceChart.series[0].setData(pieData, true);
-            } catch (e) {
-                console.error('Error updating pie chart:', e);
-                console.log('Pie data format:', pieData);
-            }
-
-            // Update daily usage chart - ensure proper data format
-            const barData = devices.map((device, index) => {
-                const value = devicesData[device]?.daily || 0;
-                return {
-                    y: Number(value), // Ensure it's a number
-                    color: [colors.toilet, colors.faucet, colors.garden][index]
-                };
-            });
-            
-            try {
-                dailyChart.series[0].setData(barData, true);
-            } catch (e) {
-                console.error('Error updating bar chart:', e);
-                console.log('Bar data format:', barData);
-            }
-        }
+    // Update pie chart with Supabase data
+    const pieData = devices.map((device, index) => ({
+        name: device.charAt(0).toUpperCase() + device.slice(1),
+        y: Number(dailyTotals[device] || 0),
+        color: [colors.toilet, colors.faucet, colors.garden][index]
+    }));
+    
+    // Update bar chart with Supabase data
+    const barData = devices.map((device, index) => ({
+        y: Number(dailyTotals[device] || 0),
+        color: [colors.toilet, colors.faucet, colors.garden][index]
+    }));
+    
+    deviceChart.series[0].setData(pieData, true);
+    dailyChart.series[0].setData(barData, true);
+}
 
         function updateKPIs() {
             // Update timestamp
