@@ -979,9 +979,7 @@
                             devicesData[deviceName].daily = Math.max(devicesData[deviceName].daily, totalConsumed);
                         }
                     });
-                    
-                    // Filter data by current time range
-                    filterDataByTimeRange();
+    
                 }
                 
                 showLoading(false);
@@ -1365,34 +1363,28 @@
         // ======================
         async function fetchAndUpdateData() {
             try {
-                // Get latest data from Supabase (since microcontrollers POST to api.php which saves to Supabase)
-                const latestData = await getLatestDataFromSupabase();
+                // Get data for current time range from Supabase
+                const data = await getDataFromSupabase(selectedTimeRange);
                 
-                if (latestData && latestData.length > 0) {
-                    latestData.forEach(record => {
+                if (data && data.length > 0) {
+                    // Reset device data
+                    devices.forEach(device => {
+                        devicesData[device] = { flow: [], daily: 0 };
+                    });
+                    
+                    // Process all data within time range
+                    data.forEach(record => {
+                        const timestamp = new Date(record.timestamp).getTime();
                         const deviceName = record.device_name;
                         const flowRate = record.flow_rate;
                         const totalConsumed = record.total_consumed;
                         
                         if (devices.includes(deviceName)) {
-                            updateLocalDeviceData(deviceName, flowRate, totalConsumed);
+                            devicesData[deviceName].flow.push([timestamp, flowRate]);
+                            devicesData[deviceName].daily = Math.max(devicesData[deviceName].daily, totalConsumed);
                         }
                     });
                 }
-                
-                // Filter data by current time range
-                filterDataByTimeRange();
-                
-                // Update charts and KPIs
-                updateCharts();
-                updateKPIs();
-                
-                console.log('Data updated successfully');
-            } catch (error) {
-                console.error('Error in fetchAndUpdateData:', error);
-                showError('Failed to fetch real-time data');
-            }
-        }
         
         // ======================
         // Debug Function - Add this to help troubleshoot
@@ -1447,11 +1439,8 @@
         window.onload = async () => {
             await initializeSystem();
             
-            // Fetch real-time data every 10 seconds
-            setInterval(fetchAndUpdateData, 10000);
-            
-            // Refresh data from Supabase every 5 minutes to sync with database
-            setInterval(loadDataFromSupabase, 300000);
+        // Fetch data from Supabase every 15 seconds for real-time updates
+        setInterval(fetchAndUpdateData, 3000);
         };
         </script>
     </body>
