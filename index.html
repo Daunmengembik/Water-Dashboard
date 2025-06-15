@@ -1285,12 +1285,12 @@
 
             // Update individual device flow rates (current/latest values)
             document.getElementById('flowRate1').textContent = 
-                `${(devicesData.toilet?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+                `${(devicesData.toilet?.currentFlow || 0).toFixed(1)} L/min`;
             document.getElementById('flowRate2').textContent = 
-                `${(devicesData.faucet?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
+                `${(devicesData.faucet?.currentFlow || 0).toFixed(1)} L/min`;
             document.getElementById('flowRate3').textContent = 
-                `${(devicesData.garden?.flow.slice(-1)[0]?.[1] || 0).toFixed(1)} L/min`;
-            
+                `${(devicesData.garden?.currentFlow || 0).toFixed(1)} L/min`;
+                        
             // Update individual device consumption
             document.getElementById('totalWater1').textContent = (devicesData.toilet?.daily || 0).toFixed(1);
             document.getElementById('totalWater2').textContent = (devicesData.faucet?.daily || 0).toFixed(1);
@@ -1361,31 +1361,41 @@
         // ======================
         // Real-time Data Management
         // ======================
-        async function fetchAndUpdateData() {
-            try {
-                // Get data for current time range from Supabase
-                const data = await getDataFromSupabase(selectedTimeRange);
-                
-                if (data && data.length > 0) {
-                    // Reset device data
-                    devices.forEach(device => {
-                        devicesData[device] = { flow: [], daily: 0 };
-                    });
+       async function fetchAndUpdateData() {
+        try {
+            // 1. Get latest real-time data for KPIs (current flow rates)
+            const latestData = await getLatestDataFromSupabase();
+            
+            if (latestData && latestData.length > 0) {
+                latestData.forEach(record => {
+                    const deviceName = record.device_name;
+                    const flowRate = record.flow_rate;
+                    const totalConsumed = record.total_consumed;
                     
-                    // Process all data within time range
-                    data.forEach(record => {
-                        const timestamp = new Date(record.timestamp).getTime();
-                        const deviceName = record.device_name;
-                        const flowRate = record.flow_rate;
-                        const totalConsumed = record.total_consumed;
-                        
-                        if (devices.includes(deviceName)) {
-                            devicesData[deviceName].flow.push([timestamp, flowRate]);
-                            devicesData[deviceName].daily = Math.max(devicesData[deviceName].daily, totalConsumed);
+                    if (devices.includes(deviceName)) {
+                        // Update only current flow for KPIs
+                        if (!devicesData[deviceName]) {
+                            devicesData[deviceName] = { flow: [], daily: 0 };
                         }
-                    });
-                }
-        
+                        devicesData[deviceName].currentFlow = flowRate;
+                        devicesData[deviceName].daily = totalConsumed;
+                    }
+                });
+            }
+            
+            // 2. Get chart data from Supabase for selected time range
+            await loadDataFromSupabase();
+            
+            // Update charts and KPIs
+            updateCharts();
+            updateKPIs();
+            
+        } catch (error) {
+            console.error('Error in fetchAndUpdateData:', error);
+            showError('Failed to fetch real-time data');
+        }
+    }
+            
         // ======================
         // Debug Function - Add this to help troubleshoot
         // ======================
